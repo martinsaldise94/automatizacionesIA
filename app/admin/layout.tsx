@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isAdmin } from '@/lib/admin'
 import { signOut } from './login/actions'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  // Sesión no basta: hace falta rol admin. Un usuario del portal (tier_3)
+  // tiene sesión válida pero NUNCA debe entrar aquí.
+  if (!user || !isAdmin(user)) {
     redirect('/admin/login')
   }
 

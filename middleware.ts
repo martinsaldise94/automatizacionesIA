@@ -10,11 +10,13 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = (request.headers.get('host') ?? '').split(':')[0]
 
-  // Siempre inyectar x-pathname para que los layouts puedan leer el path actual
+  // Headers de confianza: el cliente nunca puede inyectarlos.
+  // x-tenant se borra siempre; x-pathname se sobrescribe siempre con el path real.
   const baseHeaders = new Headers(request.headers)
+  baseHeaders.delete('x-tenant')
   baseHeaders.set('x-pathname', pathname)
 
-  // Rutas que no pertenecen a ningún tenant — pasar sin modificar (pero con x-pathname)
+  // Rutas que no pertenecen a ningún tenant — pasar sin reescribir
   if (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/_next') ||
@@ -28,7 +30,7 @@ export function middleware(request: NextRequest) {
     hostname === APP_HOSTNAME ||
     hostname === `www.${APP_HOSTNAME}`
   ) {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: baseHeaders } })
   }
 
   let tenantIdentifier: string
@@ -47,10 +49,9 @@ export function middleware(request: NextRequest) {
   rewritten.pathname = `/${tenantIdentifier}${pathname === '/' ? '' : pathname}`
 
   // Inyectar x-tenant en headers upstream (útil en layouts sin params, ej. route handlers)
-  const headers = new Headers(request.headers)
-  headers.set('x-tenant', tenantIdentifier)
+  baseHeaders.set('x-tenant', tenantIdentifier)
 
-  return NextResponse.rewrite(rewritten, { request: { headers } })
+  return NextResponse.rewrite(rewritten, { request: { headers: baseHeaders } })
 }
 
 export const config = {

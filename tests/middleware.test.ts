@@ -71,6 +71,32 @@ describe('middleware — dev local', () => {
   })
 })
 
+describe('middleware — anti-spoofing de headers', () => {
+  it('sobrescribe un x-pathname falso enviado por el cliente', () => {
+    const r = new NextRequest('https://miagencia.com/admin/tenants', {
+      headers: { host: 'miagencia.com', 'x-pathname': '/admin/login' },
+    })
+    const res = middleware(r)
+    expect(res.headers.get('x-middleware-request-x-pathname')).toBe('/admin/tenants')
+  })
+
+  it('elimina un x-tenant falso en el dominio raíz', () => {
+    const r = new NextRequest('https://miagencia.com/', {
+      headers: { host: 'miagencia.com', 'x-tenant': 'casapepe' },
+    })
+    const res = middleware(r)
+    expect(res.headers.get('x-middleware-request-x-tenant')).toBeNull()
+  })
+
+  it('un x-tenant falso no puede pisar el real en subdominio', () => {
+    const r = new NextRequest('https://casapepe.miagencia.com/', {
+      headers: { host: 'casapepe.miagencia.com', 'x-tenant': 'otro' },
+    })
+    const res = middleware(r)
+    expect(res.headers.get('x-middleware-request-x-tenant')).toBe('casapepe')
+  })
+})
+
 describe('middleware — rutas excluidas', () => {
   it('/admin pasa sin tocar aunque venga de subdominio', () => {
     const res = middleware(req('https://casapepe.miagencia.com/admin/tenants'))

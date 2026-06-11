@@ -10,13 +10,17 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = (request.headers.get('host') ?? '').split(':')[0]
 
-  // Rutas que no pertenecen a ningún tenant — pasar sin modificar
+  // Siempre inyectar x-pathname para que los layouts puedan leer el path actual
+  const baseHeaders = new Headers(request.headers)
+  baseHeaders.set('x-pathname', pathname)
+
+  // Rutas que no pertenecen a ningún tenant — pasar sin modificar (pero con x-pathname)
   if (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/_next') ||
     /\.\w+$/.test(pathname) // archivos estáticos con extensión
   ) {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: baseHeaders } })
   }
 
   // Dominio raíz (la plataforma misma) — sin tenant

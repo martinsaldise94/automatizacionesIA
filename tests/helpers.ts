@@ -11,7 +11,6 @@ export function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
     status: 'active',
     config: {
       branding: { primaryColor: '#000000', secondaryColor: '#ffffff' },
-      blocks: [],
       contact: {},
       seo: { title: 'Demo', description: 'Demo' },
     },

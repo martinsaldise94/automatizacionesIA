@@ -35,12 +35,20 @@ describe('hasFeature', () => {
   it('tier_3 tiene todas las features', () => {
     const tenant = makeTenant({ plan: 'tier_3' })
     const all = [
-      'web', 'agent', 'leads',
+      'web', 'agent', 'leads', 'builder', 'blog',
       'bookings', 'reminders', 'forms',
       'client_portal', 'crm', 'dashboard', 'whatsapp',
     ] as const
     for (const feature of all) {
       expect(hasFeature(tenant, feature)).toBe(true)
+    }
+  })
+
+  it('builder y blog están en TODOS los tiers (self-service desde tier_1)', () => {
+    for (const plan of ['tier_1', 'tier_2', 'tier_3'] as const) {
+      const tenant = makeTenant({ plan })
+      expect(hasFeature(tenant, 'builder'), `${plan} debería tener builder`).toBe(true)
+      expect(hasFeature(tenant, 'blog'), `${plan} debería tener blog`).toBe(true)
     }
   })
 

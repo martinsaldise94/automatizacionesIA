@@ -30,7 +30,6 @@ export interface SeoConfig {
 export interface TenantConfig {
   template?: string
   branding: BrandingConfig
-  blocks: BlockConfig[]
   contact: ContactConfig
   seo: SeoConfig
 }
@@ -95,6 +94,31 @@ export interface Message {
   created_at: string
 }
 
+export interface Page {
+  id: string
+  tenant_id: string
+  path: string
+  title: string
+  draft_data: Record<string, unknown>
+  published_data: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Post {
+  id: string
+  tenant_id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  cover_url: string | null
+  content: string
+  status: 'draft' | 'published'
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ─── Database type (usado por el cliente Supabase) ────────────────────────────
 
 export interface Database {
@@ -119,6 +143,16 @@ export interface Database {
         Row: Message
         Insert: Omit<Message, 'id' | 'created_at'>
         Update: Partial<Omit<Message, 'id' | 'created_at'>>
+      }
+      pages: {
+        Row: Page
+        Insert: Omit<Page, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Page, 'id' | 'created_at'>>
+      }
+      posts: {
+        Row: Post
+        Insert: Omit<Post, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Post, 'id' | 'created_at'>>
       }
     }
   }

@@ -6,6 +6,13 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { isAdmin } from '@/lib/admin'
+import {
+  updateTenantBasic,
+  updateTenantConfig,
+  updateTenantAiConfig,
+  getTenantOwnerId,
+  setTenantOwner,
+} from '@/lib/db/tenants'
 
 const VALID_PLANS   = ['tier_1', 'tier_2', 'tier_3'] as const
 const VALID_STATUSES = ['setup', 'active', 'paused'] as const
@@ -64,12 +71,12 @@ export async function updateBasic(id: string, formData: FormData) {
   if (!VALID_PLANS.includes(plan as typeof VALID_PLANS[number]))     err(id, 'Plan inválido')
   if (!VALID_STATUSES.includes(status as typeof VALID_STATUSES[number])) err(id, 'Estado inválido')
 
-  const supabase = createServiceClient()
-  const { error } = await supabase
-    .from('tenants')
-    .update({ name, domain, plan, status } as never)
-    .eq('id', id)
-
+  const { error } = await updateTenantBasic(id, {
+    name,
+    domain,
+    plan:   plan   as typeof VALID_PLANS[number],
+    status: status as typeof VALID_STATUSES[number],
+  })
   if (error) err(id, error.message)
 
   revalidatePath(`/admin/tenants/${id}`)
@@ -106,12 +113,7 @@ export async function updateConfig(id: string, formData: FormData) {
   const result = configSchema.safeParse(raw)
   if (!result.success) err(id, result.error.issues[0]?.message ?? 'Config inválida')
 
-  const supabase = createServiceClient()
-  const { error } = await supabase
-    .from('tenants')
-    .update({ config: result.data } as never)
-    .eq('id', id)
-
+  const { error } = await updateTenantConfig(id, result.data)
   if (error) err(id, error.message)
 
   revalidatePath(`/admin/tenants/${id}`)
@@ -126,15 +128,26 @@ export async function inviteOwner(id: string, formData: FormData) {
   const email = (formData.get('email') as string ?? '').trim().toLowerCase()
   if (!email) err(id, 'El email es obligatorio')
 
+  // No invitar un segundo dueño: dejaría al anterior con acceso huérfano.
+  if (await getTenantOwnerId(id)) {
+    err(id, 'Este tenant ya tiene dueño. Cambia su email en vez de invitar a otro.')
+  }
+
+  // Auth (auth.admin) no es parte de lib/db: service client directo.
   const service = createServiceClient()
 
   const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email)
   if (inviteError) err(id, inviteError.message)
 
+  // app_metadata es la fuente de verdad para RLS (solo escribible con service role).
   const { error: metaError } = await service.auth.admin.updateUserById(invited!.user.id, {
     app_metadata: { tenant_id: id, role: 'owner' },
   })
   if (metaError) err(id, metaError.message)
+
+  // owner_user_id en el tenant = índice inverso para encontrar al dueño sin escanear.
+  const { error: linkError } = await setTenantOwner(id, invited!.user.id)
+  if (linkError) err(id, linkError.message)
 
   revalidatePath(`/admin/tenants/${id}`)
   redirect(`/admin/tenants/${id}?ok=1`)
@@ -143,14 +156,17 @@ export async function inviteOwner(id: string, formData: FormData) {
 export async function changeOwnerEmail(id: string, formData: FormData) {
   await requireAdmin()
 
-  const userId = (formData.get('userId') as string ?? '').trim()
-  const email  = (formData.get('email')  as string ?? '').trim().toLowerCase()
+  const email = (formData.get('email') as string ?? '').trim().toLowerCase()
+  if (!email) err(id, 'El nuevo email es obligatorio')
 
-  if (!userId) err(id, 'ID de usuario no encontrado')
-  if (!email)  err(id, 'El nuevo email es obligatorio')
+  // El dueño se lee de la DB, NO de un campo del form: nadie puede manipular a
+  // qué usuario se le cambia el email (defensa en profundidad).
+  const ownerUserId = await getTenantOwnerId(id)
+  if (!ownerUserId) err(id, 'Este tenant no tiene dueño asignado')
 
+  // Auth (auth.admin) no es parte de lib/db: service client directo.
   const service = createServiceClient()
-  const { error } = await service.auth.admin.updateUserById(userId, { email })
+  const { error } = await service.auth.admin.updateUserById(ownerUserId, { email })
   if (error) err(id, error.message)
 
   revalidatePath(`/admin/tenants/${id}`)
@@ -189,12 +205,7 @@ export async function updateAiConfig(id: string, formData: FormData) {
   const result = aiConfigSchema.safeParse(raw)
   if (!result.success) err(id, result.error.issues[0]?.message ?? 'AI config inválida')
 
-  const supabase = createServiceClient()
-  const { error } = await supabase
-    .from('tenants')
-    .update({ ai_config: result.data } as never)
-    .eq('id', id)
-
+  const { error } = await updateTenantAiConfig(id, result.data)
   if (error) err(id, error.message)
 
   revalidatePath(`/admin/tenants/${id}`)

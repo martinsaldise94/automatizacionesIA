@@ -9,6 +9,7 @@ export function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
     name: 'Demo',
     plan: 'tier_1',
     status: 'active',
+    owner_user_id: null,
     config: {
       branding: { primaryColor: '#000000', secondaryColor: '#ffffff' },
       contact: {},

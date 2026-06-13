@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServiceClient } from '@/lib/supabase/service'
+import { listTenants } from '@/lib/db/tenants'
 import type { Tenant } from '@/lib/supabase/types'
 
 const PLAN_BADGE: Record<Tenant['plan'], string> = {
@@ -21,27 +21,12 @@ export default async function TenantsPage({
 }) {
   const { q, plan, status } = await searchParams
 
-  const supabase = createServiceClient()
-  let query = supabase
-    .from('tenants')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (q) {
-    // Solo alfanumérico + espacios + guiones — previene inyección PostgREST en .or()
-    const safeQ = q.replace(/[^a-zA-Z0-9\s\-áéíóúüñÁÉÍÓÚÜÑ]/g, '').trim()
-    if (safeQ) query = query.or(`name.ilike.%${safeQ}%,slug.ilike.%${safeQ}%`)
-  }
-  if (plan && plan !== 'all') query = query.eq('plan', plan as Tenant['plan'])
-  if (status && status !== 'all') query = query.eq('status', status as Tenant['status'])
-
-  const { data, error } = await query
+  const { tenants, error } = await listTenants({ q, plan, status })
 
   if (error) {
     return <p className="text-red-600 text-sm">Error cargando tenants: {error.message}</p>
   }
 
-  const tenants = (data ?? []) as Tenant[]
   const hasFilters = !!q || (!!plan && plan !== 'all') || (!!status && status !== 'all')
 
   return (

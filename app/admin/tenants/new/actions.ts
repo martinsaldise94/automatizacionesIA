@@ -1,8 +1,8 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createServiceClient } from '@/lib/supabase/service'
 import { validateSlug } from '@/lib/slug'
+import { tenantSlugExists, createTenant as createTenantRow } from '@/lib/db/tenants'
 
 const VALID_PLANS = ['tier_1', 'tier_2', 'tier_3'] as const
 
@@ -24,27 +24,15 @@ export async function createTenant(formData: FormData) {
     redirect(`/admin/tenants/new?error=${encodeURIComponent('Plan inválido')}`)
   }
 
-  const supabase = createServiceClient()
-
-  const { data: existing } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle()
-
-  if (existing) {
+  if (await tenantSlugExists(slug)) {
     redirect(`/admin/tenants/new?error=${encodeURIComponent('El slug ya está en uso')}`)
   }
 
-  const { data, error } = await supabase
-    .from('tenants')
-    .insert({ slug, name, plan, status: 'setup' } as never)
-    .select('id')
-    .single()
+  const { id, error } = await createTenantRow({ slug, name, plan: plan as typeof VALID_PLANS[number] })
 
-  if (error || !data) {
+  if (error || !id) {
     redirect(`/admin/tenants/new?error=${encodeURIComponent('Error al crear el tenant')}`)
   }
 
-  redirect(`/admin/tenants/${(data as { id: string }).id}`)
+  redirect(`/admin/tenants/${id}`)
 }

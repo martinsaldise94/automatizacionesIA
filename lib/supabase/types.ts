@@ -7,11 +7,6 @@ export interface BrandingConfig {
   fontFamily?: string
 }
 
-export interface BlockConfig {
-  type: 'hero' | 'services' | 'pricing' | 'faq' | 'testimonials' | 'cta' | 'contact'
-  props: Record<string, unknown>
-}
-
 export interface ContactConfig {
   phone?: string
   whatsapp?: string
@@ -50,7 +45,7 @@ export interface TenantAiConfig {
 
 // ─── Row types ───────────────────────────────────────────────────────────────
 
-export interface Tenant {
+export type Tenant = {
   id: string
   slug: string
   domain: string | null
@@ -59,10 +54,11 @@ export interface Tenant {
   config: TenantConfig
   ai_config: TenantAiConfig
   status: 'setup' | 'active' | 'paused'
+  owner_user_id: string | null
   created_at: string
 }
 
-export interface Lead {
+export type Lead = {
   id: string
   tenant_id: string
   name: string | null
@@ -73,7 +69,7 @@ export interface Lead {
   created_at: string
 }
 
-export interface Booking {
+export type Booking = {
   id: string
   tenant_id: string
   lead_id: string | null
@@ -84,7 +80,7 @@ export interface Booking {
   created_at: string
 }
 
-export interface Message {
+export type Message = {
   id: string
   tenant_id: string
   lead_id: string | null
@@ -94,7 +90,7 @@ export interface Message {
   created_at: string
 }
 
-export interface Page {
+export type Page = {
   id: string
   tenant_id: string
   path: string
@@ -105,7 +101,7 @@ export interface Page {
   updated_at: string
 }
 
-export interface Post {
+export type Post = {
   id: string
   tenant_id: string
   slug: string
@@ -120,40 +116,38 @@ export interface Post {
 }
 
 // ─── Database type (usado por el cliente Supabase) ────────────────────────────
+//
+// Los Insert reflejan los DEFAULT y NULL del SQL: una columna con default o
+// nullable es opcional al insertar. Mantener esto sincronizado con las
+// migraciones evita los casts `as never` en escrituras.
+// Para regenerar automáticamente cuando el CLI esté enlazado: `npm run db:types`.
+
+// id y created_at los pone la DB; updated_at lo gestiona la DB/trigger.
+type Insertable<Row, Required extends keyof Row> =
+  Pick<Row, Required> & Partial<Omit<Row, Required | 'id' | 'created_at' | 'updated_at'>>
+
+// supabase-js exige que cada tabla declare `Relationships` y que el schema
+// tenga `Views`/`Functions`; sin esto el cliente resuelve Insert/Update a `never`.
+type Table<Row, Required extends keyof Row> = {
+  Row: Row
+  Insert: Insertable<Row, Required>
+  Update: Partial<Omit<Row, 'id' | 'created_at'>>
+  Relationships: []
+}
 
 export interface Database {
   public: {
     Tables: {
-      tenants: {
-        Row: Tenant
-        Insert: Omit<Tenant, 'id' | 'created_at'>
-        Update: Partial<Omit<Tenant, 'id' | 'created_at'>>
-      }
-      leads: {
-        Row: Lead
-        Insert: Omit<Lead, 'id' | 'created_at'>
-        Update: Partial<Omit<Lead, 'id' | 'created_at'>>
-      }
-      bookings: {
-        Row: Booking
-        Insert: Omit<Booking, 'id' | 'created_at'>
-        Update: Partial<Omit<Booking, 'id' | 'created_at'>>
-      }
-      messages: {
-        Row: Message
-        Insert: Omit<Message, 'id' | 'created_at'>
-        Update: Partial<Omit<Message, 'id' | 'created_at'>>
-      }
-      pages: {
-        Row: Page
-        Insert: Omit<Page, 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Omit<Page, 'id' | 'created_at'>>
-      }
-      posts: {
-        Row: Post
-        Insert: Omit<Post, 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Omit<Post, 'id' | 'created_at'>>
-      }
+      tenants:  Table<Tenant,  'slug' | 'name'>
+      leads:    Table<Lead,    'tenant_id'>
+      bookings: Table<Booking, 'tenant_id' | 'service' | 'starts_at'>
+      messages: Table<Message, 'tenant_id' | 'role' | 'content'>
+      pages:    Table<Page,    'tenant_id' | 'path' | 'title'>
+      posts:    Table<Post,    'tenant_id' | 'slug' | 'title'>
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }

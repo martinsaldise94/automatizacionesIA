@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getTenantById } from '@/lib/db/tenants'
 import type { Tenant } from '@/lib/supabase/types'
 import { updateBasic, updateConfig, updateAiConfig, inviteOwner, changeOwnerEmail } from './actions'
 
@@ -24,17 +25,15 @@ export default async function TenantEditPage({
   const { id } = await params
   const { ok, error } = await searchParams
 
+  const tenant = await getTenantById(id)
+  if (!tenant) notFound()
+
+  // Dueño por referencia directa (owner_user_id). O(1), sin escanear usuarios.
+  // Auth (auth.admin) no es parte de lib/db: se resuelve aquí con service client.
   const supabase = createServiceClient()
-  const { data } = await supabase.from('tenants').select('*').eq('id', id).single()
-
-  if (!data) notFound()
-  const tenant = data as Tenant
-
-  // Buscar usuario dueño por app_metadata.tenant_id (listUsers no filtra; escala pequeña)
-  const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-  const ownerUser = usersData?.users?.find(
-    u => u.app_metadata?.tenant_id === id && u.app_metadata?.role === 'owner'
-  ) ?? null
+  const ownerUser = tenant.owner_user_id
+    ? (await supabase.auth.admin.getUserById(tenant.owner_user_id)).data.user
+    : null
 
   const brandingRaw = tenant.config?.branding ?? {}
   const branding = {
@@ -347,7 +346,6 @@ export default async function TenantEditPage({
             )}
             <hr className="border-gray-100" />
             <form action={changeOwnerEmailAction} className="space-y-3">
-              <input type="hidden" name="userId" value={ownerUser.id} />
               <div>
                 <label htmlFor="owner-new-email" className={labelCls}>Cambiar email</label>
                 <input

@@ -118,6 +118,45 @@ export async function updateConfig(id: string, formData: FormData) {
   redirect(`/admin/tenants/${id}?ok=1`)
 }
 
+// ─── Usuario dueño ───────────────────────────────────────────────────────────
+
+export async function inviteOwner(id: string, formData: FormData) {
+  await requireAdmin()
+
+  const email = (formData.get('email') as string ?? '').trim().toLowerCase()
+  if (!email) err(id, 'El email es obligatorio')
+
+  const service = createServiceClient()
+
+  const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email)
+  if (inviteError) err(id, inviteError.message)
+
+  const { error: metaError } = await service.auth.admin.updateUserById(invited!.user.id, {
+    app_metadata: { tenant_id: id, role: 'owner' },
+  })
+  if (metaError) err(id, metaError.message)
+
+  revalidatePath(`/admin/tenants/${id}`)
+  redirect(`/admin/tenants/${id}?ok=1`)
+}
+
+export async function changeOwnerEmail(id: string, formData: FormData) {
+  await requireAdmin()
+
+  const userId = (formData.get('userId') as string ?? '').trim()
+  const email  = (formData.get('email')  as string ?? '').trim().toLowerCase()
+
+  if (!userId) err(id, 'ID de usuario no encontrado')
+  if (!email)  err(id, 'El nuevo email es obligatorio')
+
+  const service = createServiceClient()
+  const { error } = await service.auth.admin.updateUserById(userId, { email })
+  if (error) err(id, error.message)
+
+  revalidatePath(`/admin/tenants/${id}`)
+  redirect(`/admin/tenants/${id}?ok=1`)
+}
+
 // ─── Agente IA ────────────────────────────────────────────────────────────────
 
 export async function updateAiConfig(id: string, formData: FormData) {

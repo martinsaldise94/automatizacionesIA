@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { Tenant } from '@/lib/supabase/types'
-import { updateBasic, updateConfig, updateAiConfig } from './actions'
+import { updateBasic, updateConfig, updateAiConfig, inviteOwner, changeOwnerEmail } from './actions'
 
 const STATUS_BADGE: Record<Tenant['status'], string> = {
   active: 'bg-green-100 text-green-700',
@@ -29,6 +29,12 @@ export default async function TenantEditPage({
 
   if (!data) notFound()
   const tenant = data as Tenant
+
+  // Buscar usuario dueño por app_metadata.tenant_id (listUsers no filtra; escala pequeña)
+  const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  const ownerUser = usersData?.users?.find(
+    u => u.app_metadata?.tenant_id === id && u.app_metadata?.role === 'owner'
+  ) ?? null
 
   const brandingRaw = tenant.config?.branding ?? {}
   const branding = {
@@ -64,6 +70,8 @@ export default async function TenantEditPage({
   const updateBasicAction    = updateBasic.bind(null, id)
   const updateConfigAction   = updateConfig.bind(null, id)
   const updateAiConfigAction = updateAiConfig.bind(null, id)
+  const inviteOwnerAction       = inviteOwner.bind(null, id)
+  const changeOwnerEmailAction  = changeOwnerEmail.bind(null, id)
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -311,6 +319,85 @@ export default async function TenantEditPage({
             <SaveButton />
           </div>
         </form>
+      </section>
+
+      {/* ── Usuario dueño ─────────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Usuario dueño</h2>
+        <p className="text-xs text-gray-400 mb-5">
+          Login del cliente para acceder al builder y al portal. Usa <code>app_metadata</code> (no modificable por el usuario).
+        </p>
+
+        {ownerUser ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                ownerUser.email_confirmed_at
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                {ownerUser.email_confirmed_at ? 'Acceso activo' : 'Invitación pendiente'}
+              </span>
+              <span className="text-sm text-gray-700">{ownerUser.email}</span>
+            </div>
+            {!ownerUser.email_confirmed_at && (
+              <p className="text-xs text-gray-400">
+                El cliente aún no ha aceptado la invitación. Pídele que revise su correo.
+              </p>
+            )}
+            <hr className="border-gray-100" />
+            <form action={changeOwnerEmailAction} className="space-y-3">
+              <input type="hidden" name="userId" value={ownerUser.id} />
+              <div>
+                <label htmlFor="owner-new-email" className={labelCls}>Cambiar email</label>
+                <input
+                  id="owner-new-email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder={ownerUser.email ?? ''}
+                  className={inputCls}
+                />
+                <p className={hintCls}>
+                  El email anterior queda invalidado al instante. Si la invitación estaba pendiente, el cliente deberá usar el nuevo correo.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="bg-gray-900 text-white text-sm px-5 py-2 rounded hover:bg-gray-700 transition-colors"
+                >
+                  Cambiar email
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <form action={inviteOwnerAction} className="space-y-4">
+            <div>
+              <label htmlFor="owner-email" className={labelCls}>Email del cliente</label>
+              <input
+                id="owner-email"
+                name="email"
+                type="email"
+                required
+                placeholder="cliente@negocio.com"
+                className={inputCls}
+              />
+              <p className={hintCls}>
+                Supabase le enviará un email de invitación. Su JWT llevará <code>tenant_id</code> y <code>role: owner</code>.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white text-sm px-5 py-2 rounded hover:bg-blue-500 transition-colors"
+              >
+                Enviar invitación
+              </button>
+            </div>
+          </form>
+        )}
       </section>
 
     </div>

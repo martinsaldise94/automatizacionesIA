@@ -7,9 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.generated.ts"
+    "verify": "npm run typecheck && npm run lint && npm test",
+    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.generated.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs}": "eslint --fix"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",
@@ -32,6 +41,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8"

@@ -1,4 +1,5 @@
 import type { Config } from '@measured/puck'
+import { Hero } from '@/components/blocks/Hero'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
 
@@ -153,7 +154,7 @@ function Placeholder({ name }: { name: string }) {
 
 // ─── Config de Puck ───────────────────────────────────────────────────────────
 
-export const builderConfig: Config = {
+export const builderConfig: Config<BuilderComponents> = {
   categories: {
     cabecera: {
       title: 'Cabecera',
@@ -223,7 +224,7 @@ export const builderConfig: Config = {
           ],
         },
       },
-      render: () => <Placeholder name="Hero" />,
+      render: (props) => <Hero {...props} />,
     },
 
     // ── Services ─────────────────────────────────────────────────────────────

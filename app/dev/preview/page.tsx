@@ -1,3 +1,5 @@
+'use client'
+
 import type { CSSProperties } from 'react'
 import { notFound } from 'next/navigation'
 import { Render } from '@measured/puck'
@@ -9,23 +11,23 @@ import { builderConfig } from '@/lib/builder/config'
 
 const photo =
   'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=70'
+const portrait =
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=70'
+const logo =
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/640px-Google_2015_logo.svg.png'
 
 const data: Data = {
   root: { props: {} },
   content: [
+    // ── Hero (3a) ─────────────────────────────────────────────────────────────
     {
       type: 'Hero',
       props: {
         id: 'hero-centered',
         title: 'Tu negocio merece una web que transmita confianza',
-        subtitle:
-          'Atendemos con cercanía y profesionalidad. Reserva en segundos y te confirmamos al instante.',
-        variant: 'centered',
-        image: '',
-        ctaText: 'Reservar cita',
-        ctaHref: '/reservar',
-        ctaType: 'booking',
-        background: 'white',
+        subtitle: 'Atendemos con cercanía y profesionalidad. Reserva en segundos y te confirmamos al instante.',
+        variant: 'centered', image: '', ctaText: 'Reservar cita',
+        ctaHref: '/reservar', ctaType: 'booking', background: 'white',
       },
     },
     {
@@ -33,14 +35,9 @@ const data: Data = {
       props: {
         id: 'hero-image-right',
         title: 'Cuidamos de ti como nadie en la ciudad',
-        subtitle:
-          'Un equipo cercano, resultados que se notan. Escríbenos por WhatsApp y resolvemos tus dudas hoy mismo.',
-        variant: 'image-right',
-        image: photo,
-        ctaText: 'Escribir por WhatsApp',
-        ctaHref: '',
-        ctaType: 'whatsapp',
-        background: 'gray',
+        subtitle: 'Un equipo cercano, resultados que se notan. Escríbenos por WhatsApp y resolvemos tus dudas.',
+        variant: 'image-right', image: photo, ctaText: 'Escribir por WhatsApp',
+        ctaHref: '', ctaType: 'whatsapp', background: 'gray',
       },
     },
     {
@@ -49,13 +46,231 @@ const data: Data = {
         id: 'hero-image-left',
         title: 'Reserva tu cita en menos de un minuto',
         subtitle: 'Sin llamadas, sin esperas. Elige hora y nosotros nos encargamos del resto.',
-        variant: 'image-left',
-        image: photo,
-        ctaText: 'Ver disponibilidad',
-        ctaHref: '/reservar',
-        ctaType: 'booking',
-        background: 'primary',
+        variant: 'image-left', image: photo, ctaText: 'Ver disponibilidad',
+        ctaHref: '/reservar', ctaType: 'booking', background: 'primary',
       },
+    },
+    // ── 3b ────────────────────────────────────────────────────────────────────
+    {
+      type: 'Services',
+      props: {
+        id: 'services-cards',
+        title: 'Nuestros servicios', subtitle: 'Todo lo que necesitas en un solo lugar.',
+        variant: 'cards',
+        items: [
+          { name: 'Consulta inicial', description: 'Valoración personalizada sin compromiso.', icon: '🩺' },
+          { name: 'Tratamiento', description: 'Plan adaptado a tus necesidades concretas.', icon: '💊' },
+          { name: 'Seguimiento', description: 'Acompañamiento continuo hasta tu objetivo.', icon: '📋' },
+        ],
+      },
+    },
+    {
+      type: 'Services',
+      props: {
+        id: 'services-list',
+        title: 'Servicios (variante lista)', subtitle: 'Cabecera a la izquierda, filas divididas.',
+        variant: 'list',
+        items: [
+          { name: 'Consulta inicial', description: 'Valoración personalizada sin compromiso.', icon: '🩺' },
+          { name: 'Tratamiento', description: 'Plan adaptado a tus necesidades concretas.', icon: '💊' },
+          { name: 'Seguimiento', description: 'Acompañamiento continuo hasta tu objetivo.', icon: '📋' },
+        ],
+      },
+    },
+    {
+      type: 'Services',
+      props: {
+        id: 'services-grid',
+        title: 'Servicios (variante rejilla)', subtitle: 'Tiles tintados, sin borde.',
+        variant: 'grid',
+        items: [
+          { name: 'Consulta inicial', description: 'Valoración personalizada sin compromiso.', icon: '🩺' },
+          { name: 'Tratamiento', description: 'Plan adaptado a tus necesidades concretas.', icon: '💊' },
+          { name: 'Seguimiento', description: 'Acompañamiento continuo hasta tu objetivo.', icon: '📋' },
+        ],
+      },
+    },
+    {
+      type: 'Stats',
+      props: {
+        id: 'stats-grid',
+        title: 'Números que hablan por sí solos',
+        variant: 'grid',
+        items: [
+          { number: '1.200', label: 'Pacientes atendidos', suffix: '+' },
+          { number: '8', label: 'Años de experiencia', suffix: '' },
+          { number: '97', label: 'Satisfacción media', suffix: '%' },
+          { number: '3', label: 'Especialistas en plantilla', suffix: '' },
+        ],
+      },
+    },
+    {
+      type: 'Stats',
+      props: {
+        id: 'stats-row',
+        title: 'Estadísticas (variante banda)',
+        variant: 'row',
+        items: [
+          { number: '1.200', label: 'Pacientes atendidos', suffix: '+' },
+          { number: '8', label: 'Años de experiencia', suffix: '' },
+          { number: '97', label: 'Satisfacción media', suffix: '%' },
+          { number: '3', label: 'Especialistas', suffix: '' },
+        ],
+      },
+    },
+    {
+      type: 'Stats',
+      props: {
+        id: 'stats-stacked',
+        title: 'Estadísticas (variante destacadas)',
+        variant: 'stacked',
+        items: [
+          { number: '1.200', label: 'Pacientes atendidos', suffix: '+' },
+          { number: '8', label: 'Años de experiencia', suffix: '' },
+          { number: '97', label: 'Satisfacción media', suffix: '%' },
+          { number: '3', label: 'Especialistas en plantilla', suffix: '' },
+        ],
+      },
+    },
+    {
+      type: 'TextImage',
+      props: {
+        id: 'textimage-1',
+        title: 'Más de ocho años cuidando tu salud',
+        text: 'Somos un equipo de especialistas comprometidos con tu bienestar. Utilizamos las últimas técnicas y un trato cercano para que te sientas en buenas manos desde el primer momento.',
+        image: photo, imageAlt: 'Equipo de la clínica',
+        variant: 'image-right', proportion: '50/50',
+      },
+    },
+    {
+      type: 'Steps',
+      props: {
+        id: 'steps-1',
+        title: '¿Cómo funciona?', subtitle: 'En tres pasos sencillos.',
+        variant: 'horizontal',
+        items: [
+          { title: 'Reserva tu cita', description: 'Elige el día y hora que mejor te venga, sin llamadas.' },
+          { title: 'Primera consulta', description: 'Te evaluamos y diseñamos un plan a tu medida.' },
+          { title: 'Empieza tu mejora', description: 'Seguimiento continuo para que alcances tu objetivo.' },
+        ],
+      },
+    },
+    {
+      type: 'Pricing',
+      props: {
+        id: 'pricing-1',
+        title: 'Tarifas claras, sin sorpresas', subtitle: '',
+        items: [
+          { name: 'Básico', price: '49', period: 'sesión', featuresText: 'Consulta inicial\nPlan personalizado\nSoporte por email', highlighted: false, ctaText: 'Reservar' },
+          { name: 'Mensual', price: '149', period: 'mes', featuresText: 'Todo lo del Básico\n4 sesiones al mes\nSeguimiento semanal\nAcceso prioritario', highlighted: true, ctaText: 'Empezar ahora' },
+          { name: 'Trimestral', price: '399', period: 'trimestre', featuresText: 'Todo lo del Mensual\n12 sesiones\nDescuento del 10 %\nInforme de evolución', highlighted: false, ctaText: 'Reservar' },
+        ],
+      },
+    },
+    {
+      type: 'FAQ',
+      props: {
+        id: 'faq-1',
+        title: 'Preguntas frecuentes', subtitle: '',
+        items: [
+          { question: '¿Necesito derivación médica?', answer: 'No. Puedes reservar directamente desde nuestra web sin necesidad de derivación.' },
+          { question: '¿Cuánto dura una sesión?', answer: 'Las sesiones tienen una duración aproximada de 50 minutos.' },
+          { question: '¿Puedo cancelar mi cita?', answer: 'Sí, con al menos 24 horas de antelación sin coste alguno.' },
+        ],
+      },
+    },
+    {
+      type: 'Team',
+      props: {
+        id: 'team-grid',
+        title: 'Conoce al equipo', subtitle: 'Variante rejilla (foto redonda).',
+        variant: 'grid',
+        items: [
+          { photo: portrait, name: 'Dra. Ana Martínez', role: 'Directora médica', bio: 'Especialista con 12 años de experiencia en medicina integrativa.' },
+          { photo: '', name: 'Carlos Ruiz', role: 'Fisioterapeuta', bio: 'Experto en rehabilitación deportiva y técnicas manuales.' },
+          { photo: '', name: 'Laura Gómez', role: 'Nutricionista', bio: 'Dietista-nutricionista colegiada, especializada en nutrición clínica.' },
+        ],
+      },
+    },
+    {
+      type: 'Team',
+      props: {
+        id: 'team-cards',
+        title: 'Equipo (variante tarjetas)', subtitle: 'Retrato vertical, info a la izquierda.',
+        variant: 'cards',
+        items: [
+          { photo: portrait, name: 'Dra. Ana Martínez', role: 'Directora médica', bio: 'Especialista con 12 años de experiencia.' },
+          { photo: portrait, name: 'Carlos Ruiz', role: 'Fisioterapeuta', bio: 'Experto en rehabilitación deportiva.' },
+          { photo: '', name: 'Laura Gómez', role: 'Nutricionista', bio: 'Dietista-nutricionista colegiada.' },
+          { photo: portrait, name: 'Marcos Vidal', role: 'Recepción', bio: 'Te atiende y gestiona tus citas.' },
+        ],
+      },
+    },
+    {
+      type: 'Team',
+      props: {
+        id: 'team-list',
+        title: 'Equipo (variante lista)', subtitle: 'Una fila por persona, cabecera a la izquierda.',
+        variant: 'list',
+        items: [
+          { photo: portrait, name: 'Dra. Ana Martínez', role: 'Directora médica', bio: 'Especialista con 12 años de experiencia en medicina integrativa.' },
+          { photo: '', name: 'Carlos Ruiz', role: 'Fisioterapeuta', bio: 'Experto en rehabilitación deportiva y técnicas manuales.' },
+        ],
+      },
+    },
+    {
+      type: 'Gallery',
+      props: {
+        id: 'gallery-1',
+        title: 'Nuestras instalaciones',
+        variant: 'grid',
+        items: [
+          { image: photo, caption: 'Sala de consultas', alt: 'Sala de consultas' },
+          { image: photo, caption: 'Área de tratamiento', alt: 'Área de tratamiento' },
+          { image: photo, caption: 'Recepción', alt: 'Recepción' },
+        ],
+      },
+    },
+    {
+      type: 'LogoGrid',
+      props: {
+        id: 'logogrid-1',
+        title: 'Colaboramos con',
+        items: [
+          { logo, name: 'Google', href: '' },
+          { logo, name: 'Partner 2', href: '' },
+          { logo, name: 'Partner 3', href: '' },
+          { logo, name: 'Partner 4', href: '' },
+        ],
+      },
+    },
+    {
+      type: 'CTA',
+      props: {
+        id: 'cta-white',
+        title: '¿Listo para empezar?', subtitle: 'Contáctanos hoy y te atendemos sin esperas.',
+        ctaText: 'Hablar por WhatsApp', ctaType: 'whatsapp', ctaHref: '', background: 'white',
+      },
+    },
+    {
+      type: 'CTA',
+      props: {
+        id: 'cta-primary',
+        title: 'Primera consulta sin coste', subtitle: 'Reserva ahora y valoramos tu caso sin compromiso.',
+        ctaText: 'Reservar gratis', ctaType: 'booking', ctaHref: '/reservar', background: 'primary',
+      },
+    },
+    {
+      type: 'CTA',
+      props: {
+        id: 'cta-dark',
+        title: 'Más de 1.200 pacientes ya confían en nosotros', subtitle: 'Únete y empieza tu cambio hoy.',
+        ctaText: 'Ver disponibilidad', ctaType: 'booking', ctaHref: '/reservar', background: 'dark',
+      },
+    },
+    {
+      type: 'Spacer',
+      props: { id: 'spacer-1', height: 'lg' },
     },
   ],
 }

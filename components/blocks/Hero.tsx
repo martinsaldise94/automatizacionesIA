@@ -98,7 +98,7 @@ export function Hero({
             <img
               src={image}
               alt=""
-              className="aspect-[4/3] w-full rounded-2xl object-cover ring-1 ring-black/5"
+              className="aspect-4/3 w-full rounded-2xl object-cover"
             />
           </div>
         </div>

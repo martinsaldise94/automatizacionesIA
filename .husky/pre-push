@@ -1,1 +1,1 @@
-npm run verify
+node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint && node_modules/.bin/vitest run

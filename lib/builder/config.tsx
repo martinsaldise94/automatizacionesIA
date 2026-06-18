@@ -1,5 +1,16 @@
 import type { Config } from '@measured/puck'
-import { Hero } from '@/components/blocks/Hero'
+import { Hero }      from '@/components/blocks/Hero'
+import { Services }  from '@/components/blocks/Services'
+import { Pricing }   from '@/components/blocks/Pricing'
+import { FAQ }       from '@/components/blocks/FAQ'
+import { CTA }       from '@/components/blocks/CTA'
+import { Gallery }   from '@/components/blocks/Gallery'
+import { TextImage } from '@/components/blocks/TextImage'
+import { Stats }     from '@/components/blocks/Stats'
+import { Team }      from '@/components/blocks/Team'
+import { Steps }     from '@/components/blocks/Steps'
+import { LogoGrid }  from '@/components/blocks/LogoGrid'
+import { Spacer }    from '@/components/blocks/Spacer'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
 
@@ -78,6 +89,7 @@ export type TextImageProps = {
 
 export type StatsProps = {
   title: string
+  variant: 'grid' | 'row' | 'stacked'
   items: { number: string; label: string; suffix: string }[]
 }
 
@@ -91,6 +103,7 @@ export type MapProps = {
 export type TeamProps = {
   title: string
   subtitle: string
+  variant: 'grid' | 'cards' | 'list'
   items: { photo: string; name: string; role: string; bio: string }[]
 }
 
@@ -262,7 +275,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Servicios" />,
+      render: (props) => <Services {...props} />,
     },
 
     // ── Pricing ──────────────────────────────────────────────────────────────
@@ -299,7 +312,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Precios" />,
+      render: (props) => <Pricing {...props} />,
     },
 
     // ── FAQ ──────────────────────────────────────────────────────────────────
@@ -326,7 +339,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="FAQ" />,
+      render: (props) => <FAQ {...props} />,
     },
 
     // ── Testimonials ─────────────────────────────────────────────────────────
@@ -361,7 +374,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Testimonios" />,
+      render: () => <Placeholder name="Testimonios" />, // 3g
     },
 
     // ── CTA ──────────────────────────────────────────────────────────────────
@@ -397,7 +410,7 @@ export const builderConfig: Config<BuilderComponents> = {
           ],
         },
       },
-      render: () => <Placeholder name="CTA" />,
+      render: (props) => <CTA {...props} />,
     },
 
     // ── Contact ──────────────────────────────────────────────────────────────
@@ -420,7 +433,7 @@ export const builderConfig: Config<BuilderComponents> = {
           ],
         },
       },
-      render: () => <Placeholder name="Contacto" />,
+      render: () => <Placeholder name="Contacto" />, // 3f
     },
 
     // ── Gallery ──────────────────────────────────────────────────────────────
@@ -456,7 +469,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Galería" />,
+      render: (props) => <Gallery {...props} />,
     },
 
     // ── TextImage ─────────────────────────────────────────────────────────────
@@ -468,7 +481,7 @@ export const builderConfig: Config<BuilderComponents> = {
         image: '',
         imageAlt: '',
         variant: 'image-right',
-        proportion: '50/50',
+        proportion: '60/40',
       } satisfies TextImageProps,
       fields: {
         title:    { type: 'text',     label: 'Título' },
@@ -491,7 +504,7 @@ export const builderConfig: Config<BuilderComponents> = {
           ],
         },
       },
-      render: () => <Placeholder name="Texto + imagen" />,
+      render: (props) => <TextImage {...props} />,
     },
 
     // ── Stats ─────────────────────────────────────────────────────────────────
@@ -499,6 +512,7 @@ export const builderConfig: Config<BuilderComponents> = {
       label: 'Estadísticas',
       defaultProps: {
         title: '',
+        variant: 'grid',
         items: [
           { number: '500', label: 'Clientes satisfechos', suffix: '+' },
           { number: '10',  label: 'Años de experiencia',  suffix: '' },
@@ -507,6 +521,14 @@ export const builderConfig: Config<BuilderComponents> = {
       } satisfies StatsProps,
       fields: {
         title: { type: 'text', label: 'Título (opcional)' },
+        variant: {
+          type: 'select', label: 'Variante',
+          options: [
+            { label: 'Rejilla',    value: 'grid' },
+            { label: 'Banda',      value: 'row' },
+            { label: 'Destacadas', value: 'stacked' },
+          ],
+        },
         items: {
           type: 'array', label: 'Cifras',
           getItemSummary: (item) => item.label || 'Cifra',
@@ -518,7 +540,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Estadísticas" />,
+      render: (props) => <Stats {...props} />,
     },
 
     // ── Map ───────────────────────────────────────────────────────────────────
@@ -542,7 +564,7 @@ export const builderConfig: Config<BuilderComponents> = {
         address: { type: 'text',   label: 'Dirección manual (si no usa config)' },
         zoom:    { type: 'number', label: 'Zoom (10–18)', min: 10, max: 18, step: 1 },
       },
-      render: () => <Placeholder name="Mapa" />,
+      render: () => <Placeholder name="Mapa" />, // 3f
     },
 
     // ── Team ──────────────────────────────────────────────────────────────────
@@ -551,6 +573,7 @@ export const builderConfig: Config<BuilderComponents> = {
       defaultProps: {
         title: 'Nuestro equipo',
         subtitle: 'Profesionales a tu servicio.',
+        variant: 'grid',
         items: [
           { photo: '', name: 'Nombre Apellido', role: 'Cargo', bio: 'Breve descripción profesional.' },
         ],
@@ -558,6 +581,14 @@ export const builderConfig: Config<BuilderComponents> = {
       fields: {
         title:    { type: 'text', label: 'Título' },
         subtitle: { type: 'text', label: 'Subtítulo' },
+        variant: {
+          type: 'select', label: 'Variante',
+          options: [
+            { label: 'Rejilla (foto redonda)', value: 'grid' },
+            { label: 'Tarjetas (retrato)',     value: 'cards' },
+            { label: 'Lista',                  value: 'list' },
+          ],
+        },
         items: {
           type: 'array', label: 'Miembros',
           getItemSummary: (item) => item.name || 'Miembro',
@@ -570,7 +601,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Equipo" />,
+      render: (props) => <Team {...props} />,
     },
 
     // ── Steps ─────────────────────────────────────────────────────────────────
@@ -606,7 +637,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Cómo funciona" />,
+      render: (props) => <Steps {...props} />,
     },
 
     // ── Video ─────────────────────────────────────────────────────────────────
@@ -622,7 +653,7 @@ export const builderConfig: Config<BuilderComponents> = {
         url:     { type: 'text', label: 'URL de YouTube o Vimeo' },
         caption: { type: 'text', label: 'Pie de vídeo (opcional)' },
       },
-      render: () => <Placeholder name="Vídeo" />,
+      render: () => <Placeholder name="Vídeo" />, // 3c
     },
 
     // ── LogoGrid ──────────────────────────────────────────────────────────────
@@ -649,7 +680,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Logos / Partners" />,
+      render: (props) => <LogoGrid {...props} />,
     },
 
     // ── RichText ──────────────────────────────────────────────────────────────
@@ -661,7 +692,7 @@ export const builderConfig: Config<BuilderComponents> = {
       fields: {
         content: { type: 'textarea', label: 'Contenido (markdown)' },
       },
-      render: () => <Placeholder name="Texto libre" />,
+      render: () => <Placeholder name="Texto libre" />, // 3d
     },
 
     // ── Spacer ────────────────────────────────────────────────────────────────
@@ -681,7 +712,7 @@ export const builderConfig: Config<BuilderComponents> = {
           ],
         },
       },
-      render: () => <Placeholder name="Espacio" />,
+      render: (props) => <Spacer {...props} />,
     },
   },
 }

@@ -39,8 +39,10 @@ function buildHref(ctaType: CtaType, href?: string, phone?: string): string {
     const clean = phone.replace(/\D/g, '')
     return `https://wa.me/${clean}`
   }
-  if (ctaType === 'booking') return href ?? '/reservar'
-  return href ?? '#'
+  // `||` y no `??`: una cadena vacía (campo sin rellenar) debe usar el fallback,
+  // no convertirse en href="" (que recarga la página al pulsar).
+  if (ctaType === 'booking') return href || '/reservar'
+  return href || '#'
 }
 
 export function Button({

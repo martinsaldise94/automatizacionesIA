@@ -288,6 +288,65 @@ const data: Data = {
       },
     },
     {
+      type: 'Testimonials',
+      props: {
+        id: 'testimonials-manual',
+        title: 'Lo que dicen nuestros pacientes',
+        source: 'manual',
+        items: [
+          { text: 'Trato excelente y resultados desde la primera sesión. Repetiré sin duda.', author: 'María García', role: 'Paciente', avatar: portrait },
+          { text: 'Profesionales muy cercanos. Me explicaron todo con paciencia.', author: 'Juan Martínez', role: 'Paciente', avatar: '' },
+          { text: 'Reservar fue facilísimo y me confirmaron al instante.', author: 'Lucía Fernández', role: 'Paciente', avatar: '' },
+        ],
+      },
+    },
+    {
+      type: 'Testimonials',
+      props: {
+        id: 'testimonials-google',
+        title: 'Testimonios (fuente Google sin configurar → placeholder)',
+        source: 'google',
+        items: [],
+      },
+    },
+    {
+      type: 'Contact',
+      props: {
+        id: 'contact-horizontal',
+        title: 'Contacta con nosotros',
+        subtitle: 'Estamos aquí para ayudarte.',
+        variant: 'horizontal',
+      },
+    },
+    {
+      type: 'Contact',
+      props: {
+        id: 'contact-vertical',
+        title: 'Contacto (variante vertical)',
+        subtitle: '',
+        variant: 'vertical',
+      },
+    },
+    {
+      type: 'Contact',
+      props: {
+        id: 'contact-centered',
+        title: 'Contacto (variante centrada)',
+        subtitle: '',
+        variant: 'centered',
+      },
+    },
+    {
+      type: 'Map',
+      props: {
+        id: 'map-1',
+        title: 'Dónde estamos',
+        useConfigAddress: true,
+        address: '',
+        zoom: 15,
+      },
+    },
+    {
       type: 'CTA',
       props: {
         id: 'cta-white',

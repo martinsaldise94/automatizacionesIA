@@ -12,6 +12,9 @@ import { Steps }     from '@/components/blocks/Steps'
 import { LogoGrid }  from '@/components/blocks/LogoGrid'
 import { Video }     from '@/components/blocks/Video'
 import { RichText }  from '@/components/blocks/RichText'
+import { Contact }   from '@/components/blocks/Contact'
+import { Map }       from '@/components/blocks/Map'
+import { Testimonials } from '@/components/blocks/Testimonials'
 import { Spacer }    from '@/components/blocks/Spacer'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
@@ -155,17 +158,6 @@ export type BuilderComponents = {
   LogoGrid: LogoGridProps
   RichText: RichTextProps
   Spacer: SpacerProps
-}
-
-// ─── Render placeholder ───────────────────────────────────────────────────────
-// Sustituidos en Fase 4 Paso 3 por los componentes reales de components/blocks/*
-
-function Placeholder({ name }: { name: string }) {
-  return (
-    <div style={{ padding: '1rem', border: '2px dashed #e5e7eb', color: '#9ca3af', fontSize: '0.875rem', textAlign: 'center' }}>
-      {name}
-    </div>
-  )
 }
 
 // ─── Config de Puck ───────────────────────────────────────────────────────────
@@ -377,7 +369,7 @@ export const builderConfig: Config<BuilderComponents> = {
           },
         },
       },
-      render: () => <Placeholder name="Testimonios" />, // 3g
+      render: (props) => <Testimonials {...props} />,
     },
 
     // ── CTA ──────────────────────────────────────────────────────────────────
@@ -436,7 +428,7 @@ export const builderConfig: Config<BuilderComponents> = {
           ],
         },
       },
-      render: () => <Placeholder name="Contacto" />, // 3f
+      render: (props) => <Contact {...props} />,
     },
 
     // ── Gallery ──────────────────────────────────────────────────────────────
@@ -567,7 +559,7 @@ export const builderConfig: Config<BuilderComponents> = {
         address: { type: 'text',   label: 'Dirección manual (si no usa config)' },
         zoom:    { type: 'number', label: 'Zoom (10–18)', min: 10, max: 18, step: 1 },
       },
-      render: () => <Placeholder name="Mapa" />, // 3f
+      render: (props) => <Map {...props} />,
     },
 
     // ── Team ──────────────────────────────────────────────────────────────────

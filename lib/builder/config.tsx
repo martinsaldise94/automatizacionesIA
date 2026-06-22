@@ -10,6 +10,7 @@ import { Stats }     from '@/components/blocks/Stats'
 import { Team }      from '@/components/blocks/Team'
 import { Steps }     from '@/components/blocks/Steps'
 import { LogoGrid }  from '@/components/blocks/LogoGrid'
+import { Video }     from '@/components/blocks/Video'
 import { Spacer }    from '@/components/blocks/Spacer'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export type StepsProps = {
 
 export type VideoProps = {
   title: string
+  source: 'url' | 'upload'
   url: string
   caption: string
 }
@@ -645,15 +647,23 @@ export const builderConfig: Config<BuilderComponents> = {
       label: 'Vídeo',
       defaultProps: {
         title: '',
+        source: 'url',
         url: '',
         caption: '',
       } satisfies VideoProps,
       fields: {
-        title:   { type: 'text', label: 'Título (opcional)' },
-        url:     { type: 'text', label: 'URL de YouTube o Vimeo' },
+        title: { type: 'text', label: 'Título (opcional)' },
+        source: {
+          type: 'select', label: 'Fuente',
+          options: [
+            { label: 'URL (YouTube/Vimeo)', value: 'url' },
+            { label: 'Archivo subido',       value: 'upload' },
+          ],
+        },
+        url:     { type: 'text', label: 'URL del vídeo' },
         caption: { type: 'text', label: 'Pie de vídeo (opcional)' },
       },
-      render: () => <Placeholder name="Vídeo" />, // 3c
+      render: (props) => <Video {...props} />,
     },
 
     // ── LogoGrid ──────────────────────────────────────────────────────────────

@@ -21,26 +21,28 @@ export function FAQ({ title, subtitle, items }: FaqProps) {
         <dl className="divide-y divide-gray-100">
           {items.map((item, i) => (
             <div key={i}>
+              {/* El heading envuelve al botón (no al revés): un <h3> dentro de
+                  <button> es markup inválido y rompe la navegación por headings. */}
               <dt>
-                <button
-                  type="button"
-                  onClick={() => setOpen(open === i ? null : i)}
-                  aria-expanded={open === i}
-                  className="flex w-full items-center justify-between gap-4 py-5 text-left"
-                >
-                  <Heading as="h3" size="sm" className="text-balance">
-                    {item.question}
-                  </Heading>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'shrink-0 text-brand transition-transform duration-200 ease-out',
-                      open === i && 'rotate-180',
-                    )}
+                <Heading as="h3" size="sm" className="text-balance">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(open === i ? null : i)}
+                    aria-expanded={open === i}
+                    className="flex w-full items-center justify-between gap-4 py-5 text-left"
                   >
-                    ▾
-                  </span>
-                </button>
+                    <span>{item.question}</span>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'shrink-0 text-base text-brand transition-transform duration-200 ease-out',
+                        open === i && 'rotate-180',
+                      )}
+                    >
+                      ▾
+                    </span>
+                  </button>
+                </Heading>
               </dt>
               {open === i && (
                 <dd className="pb-5">

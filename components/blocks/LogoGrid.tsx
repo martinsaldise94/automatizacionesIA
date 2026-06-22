@@ -23,7 +23,12 @@ export function LogoGrid({ title, items }: LogoGridProps) {
             return (
               <li key={i}>
                 {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                  >
                     {img}
                   </a>
                 ) : (

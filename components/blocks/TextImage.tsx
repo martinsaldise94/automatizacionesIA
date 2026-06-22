@@ -1,4 +1,4 @@
-import { Section, Container, Heading, Text } from '@/components/ui'
+import { Section, Container, Heading, Text, FramedImage } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { TextImageProps } from '@/lib/builder/config'
 
@@ -24,14 +24,8 @@ export function TextImage({ title, text, image, imageAlt, variant, proportion }:
           </div>
 
           {image && (
-            <div className={cn('relative', imgCols, imageLeft ? 'lg:order-1' : 'lg:order-2')}>
-              <div aria-hidden className="absolute -inset-2 -z-10 translate-x-3 translate-y-3 rounded-2xl bg-brand/10" />
-              {/* eslint-disable-next-line @next/next/no-img-element -- tenant URL */}
-              <img
-                src={image}
-                alt={imageAlt || ''}
-                className="aspect-4/3 w-full rounded-2xl object-cover"
-              />
+            <div className={cn(imgCols, imageLeft ? 'lg:order-1' : 'lg:order-2')}>
+              <FramedImage src={image} alt={imageAlt || ''} />
             </div>
           )}
         </div>

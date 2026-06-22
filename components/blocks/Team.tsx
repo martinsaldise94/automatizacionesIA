@@ -1,4 +1,4 @@
-import { Section, Container, SectionHeader, Heading, Text } from '@/components/ui'
+import { Section, Container, SectionHeader, Heading, Text, BlockImage } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { TeamProps } from '@/lib/builder/config'
 
@@ -12,14 +12,7 @@ function Avatar({ item, shape }: { item: TeamItem; shape: 'circle' | 'portrait' 
     shape === 'circle' ? 'size-24' : shape === 'portrait' ? 'aspect-3/4 w-full' : 'size-28'
 
   if (item.photo) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- tenant URL
-      <img
-        src={item.photo}
-        alt={item.name}
-        className={cn('object-cover', radius, ratio)}
-      />
-    )
+    return <BlockImage src={item.photo} alt={item.name} className={cn('object-cover', radius, ratio)} />
   }
   return (
     <div

@@ -24,10 +24,7 @@ export function Services({ title, subtitle, variant, items }: ServicesProps) {
         {variant === 'cards' && (
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item, i) => (
-              <li
-                key={i}
-                className="rounded-xl border border-gray-200 p-6 transition-colors duration-200 hover:border-brand/40"
-              >
+              <li key={i} className="rounded-xl border border-gray-200 p-6">
                 <IconTile icon={item.icon} />
                 <Heading as="h3" size="sm" className="mt-4">{item.name}</Heading>
                 {item.description && (

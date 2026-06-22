@@ -1,4 +1,4 @@
-import { Section, Container, Heading, Text, Button } from '@/components/ui'
+import { Section, Container, Heading, Text, Button, FramedImage } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { HeroProps } from '@/lib/builder/config'
 
@@ -88,18 +88,8 @@ export function Hero({
             {content}
           </div>
 
-          <div className={cn('relative lg:col-span-6', imageRight ? 'lg:order-2' : 'lg:order-1')}>
-            {/* Firma: panel tintado de marca desplazado tras la imagen — profundidad sin sombra difusa */}
-            <div
-              aria-hidden
-              className="absolute -inset-2 -z-10 translate-x-3 translate-y-3 rounded-2xl bg-brand/10"
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element -- URLs arbitrarias de tenant; next/image se formaliza en Paso 8 */}
-            <img
-              src={image}
-              alt=""
-              className="aspect-4/3 w-full rounded-2xl object-cover"
-            />
+          <div className={cn('lg:col-span-6', imageRight ? 'lg:order-2' : 'lg:order-1')}>
+            <FramedImage src={image} alt="" />
           </div>
         </div>
       </Container>

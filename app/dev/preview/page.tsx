@@ -245,6 +245,27 @@ const data: Data = {
       },
     },
     {
+      type: 'RichText',
+      props: {
+        id: 'richtext-1',
+        content: [
+          '## Sobre nuestra clínica',
+          '',
+          'Llevamos **más de 8 años** cuidando de nuestros pacientes con un trato cercano.',
+          '',
+          '- Primera consulta sin compromiso',
+          '- Planes a medida',
+          '- Seguimiento continuo',
+          '',
+          'Más info en [nuestra web](https://example.com). Texto ~~antiguo~~ actualizado.',
+          '',
+          '> La salud es lo primero.',
+          '',
+          'Intento de inyección: <script>alert(1)</script> (debe verse como texto).',
+        ].join('\n'),
+      },
+    },
+    {
       type: 'Video',
       props: {
         id: 'video-youtube',

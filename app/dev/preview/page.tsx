@@ -245,6 +245,26 @@ const data: Data = {
       },
     },
     {
+      type: 'Video',
+      props: {
+        id: 'video-youtube',
+        title: 'Conócenos en vídeo',
+        source: 'url',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        caption: 'Una visita rápida a nuestras instalaciones.',
+      },
+    },
+    {
+      type: 'Video',
+      props: {
+        id: 'video-invalid',
+        title: 'Vídeo con URL inválida (placeholder)',
+        source: 'url',
+        url: 'https://evil.com/watch?v=xxx',
+        caption: '',
+      },
+    },
+    {
       type: 'CTA',
       props: {
         id: 'cta-white',

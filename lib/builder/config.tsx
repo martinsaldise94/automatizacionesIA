@@ -11,6 +11,7 @@ import { Team }      from '@/components/blocks/Team'
 import { Steps }     from '@/components/blocks/Steps'
 import { LogoGrid }  from '@/components/blocks/LogoGrid'
 import { Video }     from '@/components/blocks/Video'
+import { RichText }  from '@/components/blocks/RichText'
 import { Spacer }    from '@/components/blocks/Spacer'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
@@ -702,7 +703,7 @@ export const builderConfig: Config<BuilderComponents> = {
       fields: {
         content: { type: 'textarea', label: 'Contenido (markdown)' },
       },
-      render: () => <Placeholder name="Texto libre" />, // 3d
+      render: (props) => <RichText {...props} />,
     },
 
     // ── Spacer ────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { Section, Container, Heading, Text } from '@/components/ui'
+import { Section, Container, SectionHeader, Heading, Text } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { StepsProps } from '@/lib/builder/config'
 
@@ -8,12 +8,7 @@ export function Steps({ title, subtitle, variant, items }: StepsProps) {
   return (
     <Section background="gray">
       <Container>
-        {(title || subtitle) && (
-          <div className="mb-12 text-center">
-            {title && <Heading as="h2" className="text-balance">{title}</Heading>}
-            {subtitle && <Text size="lg" className="mt-3 text-gray-600">{subtitle}</Text>}
-          </div>
-        )}
+        <SectionHeader title={title} subtitle={subtitle} />
 
         <ol
           className={cn(

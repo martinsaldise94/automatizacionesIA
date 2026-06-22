@@ -1,4 +1,4 @@
-import { Section, Container, SectionHeader } from '@/components/ui'
+import { Section, Container, SectionHeader, BlockImage } from '@/components/ui'
 import type { GalleryProps } from '@/lib/builder/config'
 
 type GalleryItem = GalleryProps['items'][number]
@@ -7,8 +7,7 @@ function GalleryItem({ item }: { item: GalleryItem }) {
   if (!item.image) return null
   return (
     <figure>
-      {/* eslint-disable-next-line @next/next/no-img-element -- tenant URL */}
-      <img
+      <BlockImage
         src={item.image}
         alt={item.alt || ''}
         className="w-full rounded-xl bg-gray-100 object-cover"

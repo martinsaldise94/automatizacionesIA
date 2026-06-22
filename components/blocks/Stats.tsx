@@ -1,5 +1,4 @@
 import { Section, Container, SectionHeader } from '@/components/ui'
-import { cn } from '@/lib/cn'
 import type { StatsProps } from '@/lib/builder/config'
 
 type StatItem = StatsProps['items'][number]
@@ -49,7 +48,7 @@ export function Stats({ title, variant, items }: StatsProps) {
                   {item.number}
                   {item.suffix}
                 </div>
-                <div className={cn('mt-1 text-sm text-gray-600')}>{item.label}</div>
+                <div className="mt-1 text-sm text-gray-600">{item.label}</div>
               </div>
             ))}
           </dl>

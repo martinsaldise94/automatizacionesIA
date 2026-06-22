@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Section, Container, Heading, Text } from '@/components/ui'
+import { Section, Container, SectionHeader, Heading, Text } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import type { FaqProps } from '@/lib/builder/config'
 
@@ -11,12 +11,7 @@ export function FAQ({ title, subtitle, items }: FaqProps) {
   return (
     <Section background="white">
       <Container narrow>
-        {(title || subtitle) && (
-          <div className="mb-10 text-center">
-            {title && <Heading as="h2" className="text-balance">{title}</Heading>}
-            {subtitle && <Text size="lg" className="mt-3 text-gray-600">{subtitle}</Text>}
-          </div>
-        )}
+        <SectionHeader title={title} subtitle={subtitle} />
 
         <dl className="divide-y divide-gray-100">
           {items.map((item, i) => (

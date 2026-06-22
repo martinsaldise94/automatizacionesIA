@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation'
 import { Render } from '@measured/puck'
 import type { Data } from '@measured/puck'
 import { builderConfig } from '@/lib/builder/config'
+import { TenantProvider } from '@/components/builder/TenantProvider'
+import type { TenantContext } from '@/lib/builder/tenant-context'
 
 // Harness de validación (Paso 3a). NO es la web pública — eso es el Paso 4.
 // Renderiza el Hero en sus 3 variantes y en 2 paletas para probar que es brand-adaptive.
@@ -316,7 +318,7 @@ const data: Data = {
   ],
 }
 
-const palettes: { name: string; vars: CSSProperties }[] = [
+const palettes: { name: string; vars: CSSProperties; tenant: TenantContext }[] = [
   {
     name: 'Tenant A — verde sobrio',
     vars: {
@@ -325,6 +327,10 @@ const palettes: { name: string; vars: CSSProperties }[] = [
       '--brand-secondary': '#e9f1ef',
       '--brand-secondary-fg': '#0f2e2a',
     } as CSSProperties,
+    tenant: {
+      businessName: 'Clínica Verde',
+      contact: { phone: '600111222', whatsapp: '34600111222', email: 'hola@verde.com', address: 'Calle Mayor 1, Madrid', hours: 'L-V 9:00–18:00' },
+    },
   },
   {
     name: 'Tenant B — índigo',
@@ -334,6 +340,10 @@ const palettes: { name: string; vars: CSSProperties }[] = [
       '--brand-secondary': '#ecebf6',
       '--brand-secondary-fg': '#1c1c44',
     } as CSSProperties,
+    tenant: {
+      businessName: 'Estudio Índigo',
+      contact: { phone: '699888777', whatsapp: '34699888777', email: 'info@indigo.com', address: 'Av. Diagonal 200, Barcelona', hours: 'L-S 10:00–20:00' },
+    },
   },
 ]
 
@@ -347,7 +357,9 @@ export default function PreviewPage() {
           <div className="bg-gray-900 px-4 py-2 text-xs font-medium tracking-wide text-white">
             {p.name}
           </div>
-          <Render config={builderConfig} data={data} />
+          <TenantProvider value={p.tenant}>
+            <Render config={builderConfig} data={data} />
+          </TenantProvider>
         </section>
       ))}
     </main>

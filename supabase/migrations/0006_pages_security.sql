@@ -16,7 +16,11 @@
 
 drop policy if exists "pages_public_read" on pages;
 
-revoke select on pages from anon;
+-- Least-privilege: anon no debe tener NINGÚN privilegio sobre `pages`. El render
+-- público va por service role; el dueño es rol `authenticated` (no se toca). Sin
+-- esto, anon arrastraba grants por defecto (INSERT/UPDATE/DELETE/TRUNCATE) que la
+-- RLS bloquea hoy, pero que serían catastróficos si la RLS se desactivara.
+revoke all on pages from anon;
 
 -- Nota (Fase 5 / blog): `posts_public_read` tiene la misma forma, pero los posts
 -- no tienen columna de borrador (el acceso se filtra por status='published'), así

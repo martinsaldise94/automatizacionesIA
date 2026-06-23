@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { findActiveTenantsByDomainOrSlug } from './db/tenants'
+import { findActiveTenantsByDomainOrSlug, findTenantsByDomainOrSlug } from './db/tenants'
 import type { Tenant } from './supabase/types'
 
 // El identificador viene del header Host o de la URL: no es de fiar.
@@ -16,6 +16,21 @@ export const resolveTenant = cache(async (slugOrDomain: string): Promise<Tenant 
   const rows = await findActiveTenantsByDomainOrSlug(slugOrDomain)
 
   // Preferencia: domain gana sobre slug si hubiera dos matches
+  return (
+    rows.find((t) => t.domain === slugOrDomain) ??
+    rows.find((t) => t.slug === slugOrDomain) ??
+    null
+  )
+})
+
+// Igual que resolveTenant pero SIN exigir status 'active'. Solo para el portal
+// del dueño: debe poder editar su web mientras el tenant está en 'setup'. La
+// web pública sigue usando resolveTenant (solo 'active').
+export const resolveTenantForPortal = cache(async (slugOrDomain: string): Promise<Tenant | null> => {
+  if (!IDENTIFIER_PATTERN.test(slugOrDomain)) return null
+
+  const rows = await findTenantsByDomainOrSlug(slugOrDomain)
+
   return (
     rows.find((t) => t.domain === slugOrDomain) ??
     rows.find((t) => t.slug === slugOrDomain) ??

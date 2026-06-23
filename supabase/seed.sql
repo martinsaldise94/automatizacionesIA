@@ -283,3 +283,121 @@ insert into tenants (slug, domain, name, plan, status, config, ai_config) values
     "model": "claude-haiku-4-5-20251001"
   }'
 );
+
+-- ─── PAGE publicada de ejemplo (Paso 4: render público) ───────────────────────
+-- Home de demo-clinica en formato Puck real (bloques registrados). Como el
+-- editor (Paso 6) aún no existe, sembramos published_data a mano para poder
+-- renderizar la web pública desde la DB. Idempotente: re-ejecutable.
+-- Contact y Map leen el contacto del tenant vía Context (no van en el JSON).
+insert into pages (tenant_id, path, title, published_data)
+values (
+  (select id from tenants where slug = 'demo-clinica'),
+  '/',
+  'Inicio',
+  $json$
+  {
+    "root": { "props": {} },
+    "content": [
+      {
+        "type": "Hero",
+        "props": {
+          "id": "hero-1",
+          "title": "Tu belleza, nuestra especialidad",
+          "subtitle": "Tratamientos estéticos avanzados con tecnología de última generación y un trato cercano.",
+          "variant": "image-right",
+          "image": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=70",
+          "ctaText": "Pedir cita",
+          "ctaHref": "/reservar",
+          "ctaType": "booking",
+          "background": "white"
+        }
+      },
+      {
+        "type": "Services",
+        "props": {
+          "id": "svc-1",
+          "title": "Nuestros tratamientos",
+          "subtitle": "Todo lo que tu piel necesita, en un solo lugar.",
+          "variant": "cards",
+          "items": [
+            { "name": "Hidratación facial", "description": "Tratamiento profundo con ácido hialurónico.", "icon": "💧" },
+            { "name": "Depilación láser", "description": "Tecnología diodo para todos los fototipos.", "icon": "✨" },
+            { "name": "Mesoterapia corporal", "description": "Reafirmante y anticelulítica.", "icon": "🌿" }
+          ]
+        }
+      },
+      {
+        "type": "Steps",
+        "props": {
+          "id": "steps-1",
+          "title": "Cómo trabajamos",
+          "subtitle": "En tres pasos sencillos.",
+          "variant": "horizontal",
+          "items": [
+            { "title": "Valoración gratuita", "description": "Estudiamos tu caso sin compromiso." },
+            { "title": "Plan personalizado", "description": "Diseñamos el tratamiento a tu medida." },
+            { "title": "Resultados", "description": "Seguimiento continuo hasta tu objetivo." }
+          ]
+        }
+      },
+      {
+        "type": "Testimonials",
+        "props": {
+          "id": "test-1",
+          "title": "Lo que dicen nuestras pacientes",
+          "source": "manual",
+          "items": [
+            { "text": "Trato excelente y resultados desde la primera sesión.", "author": "María García", "role": "Paciente", "avatar": "" },
+            { "text": "Profesionales muy cercanos. Me explicaron todo con paciencia.", "author": "Lucía Fernández", "role": "Paciente", "avatar": "" }
+          ]
+        }
+      },
+      {
+        "type": "FAQ",
+        "props": {
+          "id": "faq-1",
+          "title": "Preguntas frecuentes",
+          "subtitle": "",
+          "items": [
+            { "question": "¿La primera consulta es gratuita?", "answer": "Sí, la valoración inicial no tiene coste ni compromiso." },
+            { "question": "¿Cuántas sesiones necesito?", "answer": "Depende del tratamiento; lo definimos en la primera visita." }
+          ]
+        }
+      },
+      {
+        "type": "CTA",
+        "props": {
+          "id": "cta-1",
+          "title": "Primera consulta sin coste",
+          "subtitle": "Reserva ahora y diseñamos tu plan personalizado.",
+          "ctaText": "Reservar cita",
+          "ctaType": "booking",
+          "ctaHref": "/reservar",
+          "background": "primary"
+        }
+      },
+      {
+        "type": "Contact",
+        "props": {
+          "id": "contact-1",
+          "title": "Contacta con nosotros",
+          "subtitle": "Estamos aquí para ayudarte.",
+          "variant": "horizontal"
+        }
+      },
+      {
+        "type": "Map",
+        "props": {
+          "id": "map-1",
+          "title": "Dónde estamos",
+          "useConfigAddress": true,
+          "address": "",
+          "zoom": 15
+        }
+      }
+    ]
+  }
+  $json$::jsonb
+)
+on conflict (tenant_id, path)
+do update set title = excluded.title, published_data = excluded.published_data;

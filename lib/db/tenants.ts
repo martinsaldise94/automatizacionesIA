@@ -30,6 +30,18 @@ export async function findActiveTenantsByDomainOrSlug(identifier: string): Promi
   return (data ?? []) as Tenant[]
 }
 
+// Como la anterior pero SIN filtrar por status — para el portal del dueño, que
+// debe funcionar también con el tenant en 'setup'/'paused' (cuando aún no es
+// público). La autorización la da el claim del JWT, no el status.
+export async function findTenantsByDomainOrSlug(identifier: string): Promise<Tenant[]> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('tenants')
+    .select('*')
+    .or(`domain.eq.${identifier},slug.eq.${identifier}`)
+  return (data ?? []) as Tenant[]
+}
+
 export async function getTenantById(id: string): Promise<Tenant | null> {
   const supabase = createServiceClient()
   const { data } = await supabase.from('tenants').select('*').eq('id', id).single()

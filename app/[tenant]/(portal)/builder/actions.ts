@@ -7,6 +7,13 @@ import { resolveTenantForPortal } from '@/lib/tenant'
 import { canAccessPortal } from '@/lib/guard'
 import { normalizePagePath } from '@/lib/builder/pagePath'
 import { validatePuckData } from '@/lib/builder/publish'
+import {
+  validateImageFile,
+  extForImageMime,
+  buildAssetPath,
+  STORAGE_BUCKET,
+} from '@/lib/builder/upload'
+import { createServiceClient } from '@/lib/supabase/service'
 import { builderConfig } from '@/lib/builder/config'
 import { createPage, saveDraft, updatePageMeta, deletePage, publishPage } from '@/lib/db/pages'
 
@@ -90,6 +97,43 @@ export async function publishAction(
   )
   if (error) return { ok: false, error: 'No se pudo publicar.' }
   return { ok: true }
+}
+
+// Sube una imagen a Storage `tenant-assets/{tenant_id}/...` y devuelve su URL
+// pública. Escritura server-side con service role (bypassa RLS); el tenant se
+// resuelve en servidor. Valida MIME/tamaño real (jpg/png/webp, ≤5MB; SVG no).
+// ⚠️ Requiere el bucket creado (migración 0007) para funcionar en vivo.
+export type UploadResult = { ok: true; url: string } | { ok: false; error: string }
+
+export async function uploadImageAction(formData: FormData): Promise<UploadResult> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const file = formData.get('file')
+  if (!(file instanceof File)) return { ok: false, error: 'No se recibió ningún archivo.' }
+
+  const check = validateImageFile(file.type, file.size)
+  if (!check.ok) {
+    return {
+      ok: false,
+      error:
+        check.reason === 'tipo'
+          ? 'Formato no permitido (usa JPG, PNG o WEBP).'
+          : 'La imagen supera el tamaño máximo (5 MB).',
+    }
+  }
+
+  const ext = extForImageMime(file.type)!
+  const path = buildAssetPath(tenantId, crypto.randomUUID(), ext)
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false })
+  if (error) return { ok: false, error: 'No se pudo subir la imagen.' }
+
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path)
+  return { ok: true, url: data.publicUrl }
 }
 
 // Renombra/mueve una página (título + path). Revalida la lista.

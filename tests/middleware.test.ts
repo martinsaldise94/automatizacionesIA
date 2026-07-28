@@ -7,8 +7,8 @@ process.env.NEXT_PUBLIC_APP_URL = 'https://miagencia.com'
 let middleware: (req: NextRequest) => Response
 
 beforeAll(async () => {
-  const mod = await import('@/middleware')
-  middleware = mod.middleware
+  const mod = await import('@/proxy')
+  middleware = mod.proxy
 })
 
 // Construye una request con el header host correcto (fetch no lo añade solo)

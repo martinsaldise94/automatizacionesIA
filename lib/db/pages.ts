@@ -29,6 +29,21 @@ export async function getPublishedPage(tenantId: string, path: string): Promise<
   return { title: data.title, publishedData: data.published_data }
 }
 
+// Páginas publicadas de un tenant, para la navegación pública y el sitemap.
+// Solo path+title de las que tienen published_data (nunca draft).
+export async function listPublishedPages(
+  tenantId: string,
+): Promise<Array<{ path: string; title: string }>> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('pages')
+    .select('path, title')
+    .eq('tenant_id', tenantId)
+    .not('published_data', 'is', null)
+    .order('path', { ascending: true })
+  return (data ?? []).map((p) => ({ path: p.path, title: p.title }))
+}
+
 // ─── Editor (portal del dueño) ────────────────────────────────────────────────
 //
 // Estas funciones SÍ tocan `draft_data` (privado del dueño). El aislamiento entre

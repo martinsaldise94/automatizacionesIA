@@ -143,6 +143,23 @@ export async function updatePageMeta(
   return { error }
 }
 
+// Publica: escribe el JSON validado en `published_data` (lo que ve el público) y
+// también en `draft_data` (deja el borrador sincronizado con lo publicado). La
+// validación zod la hace la action ANTES de llamar aquí.
+export async function publishPage(
+  tenantId: string,
+  pageId: string,
+  data: Record<string, unknown>,
+): Promise<{ error: DbError }> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('pages')
+    .update({ published_data: data, draft_data: data })
+    .eq('tenant_id', tenantId)
+    .eq('id', pageId)
+  return { error }
+}
+
 // Borra una página del tenant.
 export async function deletePage(tenantId: string, pageId: string): Promise<{ error: DbError }> {
   const supabase = createServiceClient()

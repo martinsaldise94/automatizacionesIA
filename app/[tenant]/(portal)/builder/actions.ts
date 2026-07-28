@@ -6,7 +6,12 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveTenantForPortal } from '@/lib/tenant'
 import { canAccessPortal } from '@/lib/guard'
 import { normalizePagePath } from '@/lib/builder/pagePath'
-import { createPage, saveDraft, updatePageMeta, deletePage } from '@/lib/db/pages'
+import { validatePuckData } from '@/lib/builder/publish'
+import { builderConfig } from '@/lib/builder/config'
+import { createPage, saveDraft, updatePageMeta, deletePage, publishPage } from '@/lib/db/pages'
+
+// Bloques registrados (fuente de verdad: la config de Puck).
+const REGISTERED_BLOCK_TYPES = Object.keys(builderConfig.components)
 
 // Resuelve el tenant del portal y verifica que el usuario puede editarlo.
 // El tenant viene del header de confianza del middleware (x-tenant), nunca del
@@ -62,6 +67,28 @@ export async function saveDraftAction(
 
   const { error } = await saveDraft(tenantId, pageId, draftData)
   if (error) return { ok: false, error: 'No se pudo guardar.' }
+  return { ok: true }
+}
+
+// Publica una página: valida el JSON de Puck (zod: solo bloques registrados,
+// estructura y tamaño) y lo copia a published_data (lo que ve el público).
+// La validación server-side es la barrera dura: draft_data nunca se publica sin pasar por aquí.
+export async function publishAction(
+  pageId: string,
+  draftData: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string }> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const validation = validatePuckData(draftData, REGISTERED_BLOCK_TYPES)
+  if (!validation.ok) return { ok: false, error: validation.error }
+
+  const { error } = await publishPage(
+    tenantId,
+    pageId,
+    validation.data as unknown as Record<string, unknown>,
+  )
+  if (error) return { ok: false, error: 'No se pudo publicar.' }
   return { ok: true }
 }
 

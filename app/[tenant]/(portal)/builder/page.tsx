@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { resolveTenantForPortal } from '@/lib/tenant'
 import { listPagesForTenant } from '@/lib/db/pages'
 import { NewPageForm } from './NewPageForm'
+import { PageRow } from './PageRow'
 
 // Índice del builder: lista de páginas del tenant + alta de página nueva.
 // El acceso ya lo protege (portal)/layout.tsx; aquí solo se listan los datos.
@@ -31,29 +31,7 @@ export default async function BuilderPage({
           </li>
         )}
         {pages.map((p) => (
-          <li key={p.id} className="flex items-center justify-between px-4 py-3">
-            <div className="min-w-0">
-              <p className="truncate font-medium text-gray-900">{p.title}</p>
-              <p className="truncate text-sm text-gray-500">{p.path}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span
-                className={
-                  p.hasPublished
-                    ? 'rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700'
-                    : 'rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500'
-                }
-              >
-                {p.hasPublished ? 'Publicada' : 'Borrador'}
-              </span>
-              <Link
-                href={`/builder/${p.id}`}
-                className="text-sm font-medium text-gray-900 underline hover:no-underline"
-              >
-                Editar
-              </Link>
-            </div>
-          </li>
+          <PageRow key={p.id} page={p} />
         ))}
       </ul>
 

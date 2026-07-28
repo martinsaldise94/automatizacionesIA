@@ -126,3 +126,30 @@ export async function saveDraft(
     .eq('id', pageId)
   return { error }
 }
+
+// Actualiza título y/o path de una página. El path ya viene normalizado/validado
+// por la action. Puede fallar por el unique (tenant_id, path).
+export async function updatePageMeta(
+  tenantId: string,
+  pageId: string,
+  fields: { title: string; path: string },
+): Promise<{ error: DbError }> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('pages')
+    .update({ title: fields.title, path: fields.path })
+    .eq('tenant_id', tenantId)
+    .eq('id', pageId)
+  return { error }
+}
+
+// Borra una página del tenant.
+export async function deletePage(tenantId: string, pageId: string): Promise<{ error: DbError }> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('pages')
+    .delete()
+    .eq('tenant_id', tenantId)
+    .eq('id', pageId)
+  return { error }
+}

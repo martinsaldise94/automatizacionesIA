@@ -1,11 +1,12 @@
 'use server'
 
 import { headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { resolveTenantForPortal } from '@/lib/tenant'
 import { canAccessPortal } from '@/lib/guard'
 import { normalizePagePath } from '@/lib/builder/pagePath'
-import { createPage, saveDraft } from '@/lib/db/pages'
+import { createPage, saveDraft, updatePageMeta, deletePage } from '@/lib/db/pages'
 
 // Resuelve el tenant del portal y verifica que el usuario puede editarlo.
 // El tenant viene del header de confianza del middleware (x-tenant), nunca del
@@ -61,5 +62,45 @@ export async function saveDraftAction(
 
   const { error } = await saveDraft(tenantId, pageId, draftData)
   if (error) return { ok: false, error: 'No se pudo guardar.' }
+  return { ok: true }
+}
+
+// Renombra/mueve una página (título + path). Revalida la lista.
+export type ActionResult = { ok: true } | { ok: false; error: string }
+
+export async function updatePageMetaAction(
+  pageId: string,
+  input: { title: string; path: string },
+): Promise<ActionResult> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const title = input.title.trim()
+  if (!title) return { ok: false, error: 'Falta el título.' }
+
+  const pathResult = normalizePagePath(input.path)
+  if (!pathResult.ok) return { ok: false, error: pathResult.error }
+
+  const { error } = await updatePageMeta(tenantId, pageId, { title, path: pathResult.path })
+  if (error) {
+    const msg = error.message.includes('duplicate')
+      ? `Ya existe una página en "${pathResult.path}".`
+      : 'No se pudo guardar.'
+    return { ok: false, error: msg }
+  }
+
+  revalidatePath('/builder')
+  return { ok: true }
+}
+
+// Borra una página. Revalida la lista.
+export async function deletePageAction(pageId: string): Promise<ActionResult> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const { error } = await deletePage(tenantId, pageId)
+  if (error) return { ok: false, error: 'No se pudo borrar.' }
+
+  revalidatePath('/builder')
   return { ok: true }
 }

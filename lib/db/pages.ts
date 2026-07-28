@@ -143,6 +143,26 @@ export async function updatePageMeta(
   return { error }
 }
 
+// Inserta el set de páginas de una plantilla al crear un tenant. Cada página
+// arranca ya publicada (draft_data = published_data = data de la plantilla), así
+// el tenant tiene web viva desde el minuto uno; el cliente la personaliza luego.
+export async function insertTemplatePages(
+  tenantId: string,
+  pages: Array<{ path: string; title: string; data: Record<string, unknown> }>,
+): Promise<{ error: DbError }> {
+  if (pages.length === 0) return { error: null }
+  const supabase = createServiceClient()
+  const rows = pages.map((p) => ({
+    tenant_id: tenantId,
+    path: p.path,
+    title: p.title,
+    draft_data: p.data,
+    published_data: p.data,
+  }))
+  const { error } = await supabase.from('pages').insert(rows)
+  return { error }
+}
+
 // Publica: escribe el JSON validado en `published_data` (lo que ve el público) y
 // también en `draft_data` (deja el borrador sincronizado con lo publicado). La
 // validación zod la hace la action ANTES de llamar aquí.

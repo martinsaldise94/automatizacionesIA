@@ -1,0 +1,65 @@
+'use server'
+
+import { headers } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+import { resolveTenantForPortal } from '@/lib/tenant'
+import { canAccessPortal } from '@/lib/guard'
+import { normalizePagePath } from '@/lib/builder/pagePath'
+import { createPage, saveDraft } from '@/lib/db/pages'
+
+// Resuelve el tenant del portal y verifica que el usuario puede editarlo.
+// El tenant viene del header de confianza del middleware (x-tenant), nunca del
+// cliente. Devuelve el id del tenant autorizado o null.
+async function authorizeBuilder(): Promise<string | null> {
+  const tenantIdentifier = (await headers()).get('x-tenant') ?? ''
+  const tenant = await resolveTenantForPortal(tenantIdentifier)
+  if (!tenant) return null
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  return canAccessPortal(user, tenant.id) ? tenant.id : null
+}
+
+// Crea una página nueva. Devuelve el id para que el cliente navegue en DURO a su
+// editor (window.location): un redirect() blando a /builder/{id} caería en 404
+// por el rewrite de tenant por host (ver nota en auth/actions.ts y plan.md).
+export type CreatePageResult = { ok: true; pageId: string } | { ok: false; error: string }
+
+export async function createPageAction(formData: FormData): Promise<CreatePageResult> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const title = ((formData.get('title') as string) ?? '').trim()
+  if (!title) return { ok: false, error: 'Falta el título.' }
+
+  const pathResult = normalizePagePath((formData.get('path') as string) ?? '')
+  if (!pathResult.ok) return { ok: false, error: pathResult.error }
+
+  const { id, error } = await createPage(tenantId, { path: pathResult.path, title })
+  if (error || !id) {
+    // El choque más común es el unique (path, tenant_id): ruta ya usada.
+    const msg = error?.message.includes('duplicate')
+      ? `Ya existe una página en "${pathResult.path}".`
+      : 'No se pudo crear la página.'
+    return { ok: false, error: msg }
+  }
+
+  return { ok: true, pageId: id }
+}
+
+// Guarda el borrador (JSON de Puck) de una página. La invoca el editor cliente.
+// NO publica → solo escribe draft_data (publicar es Paso 7).
+export async function saveDraftAction(
+  pageId: string,
+  draftData: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string }> {
+  const tenantId = await authorizeBuilder()
+  if (!tenantId) return { ok: false, error: 'No autorizado.' }
+
+  const { error } = await saveDraft(tenantId, pageId, draftData)
+  if (error) return { ok: false, error: 'No se pudo guardar.' }
+  return { ok: true }
+}

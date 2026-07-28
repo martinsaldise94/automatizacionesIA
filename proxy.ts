@@ -6,7 +6,7 @@ const APP_HOSTNAME = new URL(
   process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 ).hostname
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = (request.headers.get('host') ?? '').split(':')[0]
 

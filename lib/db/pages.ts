@@ -28,3 +28,101 @@ export async function getPublishedPage(tenantId: string, path: string): Promise<
   if (!data?.published_data) return null
   return { title: data.title, publishedData: data.published_data }
 }
+
+// ─── Editor (portal del dueño) ────────────────────────────────────────────────
+//
+// Estas funciones SÍ tocan `draft_data` (privado del dueño). El aislamiento entre
+// tenants es el filtro `.eq('tenant_id', tenantId)` en CADA query: el tenantId se
+// resuelve server-side (header de confianza + guard), nunca llega del cliente.
+// La escritura es service role a propósito → cubre dueño Y admin (la RLS de owner
+// no autoriza al admin de la plataforma).
+
+// Resultado de escritura neutro respecto al motor de DB (igual que lib/db/tenants.ts).
+type DbError = { message: string } | null
+
+export type PageListItem = {
+  id: string
+  path: string
+  title: string
+  hasPublished: boolean
+  updatedAt: string
+}
+
+// Lista de páginas de un tenant para el índice del builder.
+export async function listPagesForTenant(tenantId: string): Promise<PageListItem[]> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('pages')
+    .select('id, path, title, published_data, updated_at')
+    .eq('tenant_id', tenantId)
+    .order('path', { ascending: true })
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    path: p.path,
+    title: p.title,
+    hasPublished: p.published_data !== null,
+    updatedAt: p.updated_at,
+  }))
+}
+
+export type EditorPage = {
+  id: string
+  path: string
+  title: string
+  draftData: Record<string, unknown>
+}
+
+// Una página para editar. Devuelve `draft_data` (lo que el dueño está editando).
+// Scoped al tenant: un pageId de otro tenant → null → notFound() arriba.
+export async function getPageForEditor(
+  tenantId: string,
+  pageId: string,
+): Promise<EditorPage | null> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('pages')
+    .select('id, path, title, draft_data')
+    .eq('tenant_id', tenantId)
+    .eq('id', pageId)
+    .maybeSingle()
+
+  if (!data) return null
+  return { id: data.id, path: data.path, title: data.title, draftData: data.draft_data }
+}
+
+// Crea una página vacía (draft sin bloques, sin publicar). El path ya viene
+// normalizado/validado por la action; aquí solo se inserta.
+export async function createPage(
+  tenantId: string,
+  input: { path: string; title: string },
+): Promise<{ id: string | null; error: DbError }> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('pages')
+    .insert({
+      tenant_id: tenantId,
+      path: input.path,
+      title: input.title,
+      draft_data: { content: [], root: {} },
+      published_data: null,
+    })
+    .select('id')
+    .single()
+  return { id: data?.id ?? null, error }
+}
+
+// Guarda el borrador (JSON de Puck). NO toca `published_data` → publicar es Paso 7.
+export async function saveDraft(
+  tenantId: string,
+  pageId: string,
+  draftData: Record<string, unknown>,
+): Promise<{ error: DbError }> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('pages')
+    .update({ draft_data: draftData })
+    .eq('tenant_id', tenantId)
+    .eq('id', pageId)
+  return { error }
+}

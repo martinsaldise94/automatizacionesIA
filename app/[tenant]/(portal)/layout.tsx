@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { resolveTenantForPortal } from '@/lib/tenant'
 import { canAccessPortal } from '@/lib/guard'
-import { signOut } from './auth/actions'
+import { SignOutButton } from './auth/SignOutButton'
 
 // Guard del portal del dueño. Mismo patrón que el layout de /admin:
 // la página de login (/auth) NO se protege para evitar bucle de redirects.
@@ -41,11 +41,7 @@ export default async function PortalLayout({
         <span className="font-semibold text-gray-900">{tenant.name} — Portal</span>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">{user?.email}</span>
-          <form action={signOut}>
-            <button type="submit" className="text-sm text-gray-500 hover:text-gray-900">
-              Salir
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </header>
       <main className="p-6">{children}</main>

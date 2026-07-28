@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -38,7 +39,17 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
-        <span className="font-semibold text-gray-900">{tenant.name} — Portal</span>
+        <div className="flex items-center gap-6">
+          <span className="font-semibold text-gray-900">{tenant.name}</span>
+          <nav className="flex items-center gap-4 text-sm">
+            <Link href="/builder" className="text-gray-600 hover:text-gray-900">
+              Páginas
+            </Link>
+            <Link href="/branding" className="text-gray-600 hover:text-gray-900">
+              Marca
+            </Link>
+          </nav>
+        </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">{user?.email}</span>
           <SignOutButton />

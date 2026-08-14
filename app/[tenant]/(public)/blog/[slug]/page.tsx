@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import { resolveTenant } from '@/lib/tenant'
 import { getPublishedPost } from '@/lib/db/posts'
 import { formatPostDate, postMetadata } from '@/lib/blog'
-import { BlockImage, Container, Heading, Markdown, Section } from '@/components/ui'
+import { BlockImage, Container, Heading, Section } from '@/components/ui'
+import { Markdown } from '@/components/ui/Markdown'
 
 // Post individual. `getPublishedPost` filtra por tenant_id + status='published':
 // un borrador, o el post de OTRO tenant, dan 404 aquí.

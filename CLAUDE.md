@@ -51,9 +51,10 @@ Producto y sistema visual: `PRODUCT.md` · `DESIGN.md`.
 
 - **Modo caveman:** frases cortas, directas, sin florituras.
 - **Un paso a la vez.** Al arrancar, leer `## Contexto actual` de `plan.md`. `/paso` ejecuta el siguiente pendiente; `/cerrar-paso` lo integra.
-- **Autonomía dentro del paso.** No preguntes a mitad: ejecuta el paso entero (código + tests + verify + plan.md + commit + PR + merge) y para **al final** para que el usuario revise. Solo interrumpe si algo es irreversible, ambiguo de verdad, o rompe una invariante.
+- **Autonomía dentro del paso.** No preguntes a mitad: ejecuta el paso entero (código + tests + verify + plan.md) sin ir consultando. Para **antes de commitear** y enseña el resultado. Solo interrumpe antes si algo es irreversible, ambiguo de verdad, o rompe una invariante.
 - **Definition of done:** un paso no se marca `[x]` sin `npm run verify` en verde. Si falla, el paso sigue abierto.
 - **Actualizar `plan.md` SIEMPRE**, sin que te lo pidan: marcar `[x]` y refrescar `## Contexto actual` (rama, archivos nuevos, siguiente paso). Un hook te lo recordará si se te olvida.
+- **Commit y push SIEMPRE con aceptación previa del usuario.** Escribe el código, corre `verify`, actualiza `plan.md` y **para**: enseña qué vas a commitear y espera el visto bueno. Sin él no hay `git commit`, `git push`, PR ni merge. Esta regla gana a cualquier autorización general de git escrita más abajo.
 - **Al cerrar un paso, dos cosas: qué has hecho y cómo verlo.** El informe final SIEMPRE termina con instrucciones concretas para ver el resultado en el navegador: comando de arranque, URL exacta (con puerto y tenant), con qué usuario entrar si hace falta, y qué debería verse. Nada de "ya está hecho" a secas — si el usuario no lo puede mirar, el paso no está entregado.
 - **Tests obligatorios** para cualquier lógica (parseos, validaciones, ramas de decisión, sanitizado). No aserciones triviales de render.
 - **Nunca abrir `.env.local`.** Un hook lo bloquea. Si falta una variable, dilo y señala `.env.example`.
@@ -63,6 +64,6 @@ Producto y sistema visual: `PRODUCT.md` · `DESIGN.md`.
 
 `main` está **protegido**: todo entra por PR con CI en verde. Una rama por paso: `feat|fix|chore/<paso>-<resumen>` (ej. `feat/3a-hero`).
 
-Claude está autorizado a `commit`, `push`, abrir PR y **mergear a main** sin pedir permiso, dentro del flujo de un paso. Commits en **Conventional Commits** con descripción en español: `feat(builder): bloque Hero + harness de preview`. Borrar ramas con `git branch -d` (minúscula), nunca `-D`.
+Claude ejecuta `commit`, `push`, PR y merge a `main` **solo tras el visto bueno explícito del usuario** (ver Reglas de sesión). Una vez dado, encadena las cuatro cosas sin volver a preguntar. Commits en **Conventional Commits** con descripción en español: `feat(builder): bloque Hero + harness de preview`. Borrar ramas con `git branch -d` (minúscula), nunca `-D`.
 
 Redes de seguridad ya montadas: husky `pre-commit` (lint-staged) y `pre-push` (`verify`), más GitHub Actions en cada PR.

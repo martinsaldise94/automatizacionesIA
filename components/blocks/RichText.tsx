@@ -1,4 +1,5 @@
-import { Section, Container, Markdown } from '@/components/ui'
+import { Section, Container } from '@/components/ui'
+import { Markdown } from '@/components/ui/Markdown'
 import type { RichTextProps } from '@/lib/builder/config'
 
 // El render de markdown (y su política de seguridad) vive en components/ui/Markdown.

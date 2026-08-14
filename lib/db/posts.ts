@@ -15,6 +15,10 @@ export type PostListItem = {
   slug: string
   title: string
   excerpt: string | null
+  // El cuerpo viaja para poder derivar el resumen de los posts sin `excerpt`
+  // (`postExcerpt` en lib/blog). Se consume en un Server Component, así que no
+  // llega al navegador: el coste es solo de la consulta.
+  content: string
   coverUrl: string | null
   publishedAt: string | null
 }
@@ -24,7 +28,7 @@ export async function listPublishedPosts(tenantId: string): Promise<PostListItem
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('posts')
-    .select('slug, title, excerpt, cover_url, published_at')
+    .select('slug, title, excerpt, content, cover_url, published_at')
     .eq('tenant_id', tenantId)
     .eq('status', 'published')
     .order('published_at', { ascending: false, nullsFirst: false })
@@ -32,6 +36,7 @@ export async function listPublishedPosts(tenantId: string): Promise<PostListItem
     slug: p.slug,
     title: p.title,
     excerpt: p.excerpt,
+    content: p.content,
     coverUrl: p.cover_url,
     publishedAt: p.published_at,
   }))

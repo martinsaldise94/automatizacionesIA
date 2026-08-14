@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { resolveTenant } from '@/lib/tenant'
 import { listPublishedPages } from '@/lib/db/pages'
-import { orderNav } from '@/lib/nav'
+import { listPublishedPostSlugs } from '@/lib/db/posts'
+import { orderNav, withBlogLink } from '@/lib/nav'
 import { localBusinessJsonLd } from '@/lib/seo'
 
 // Chrome de la web PÚBLICA del tenant (header con navegación + footer). Envuelve
@@ -21,7 +22,11 @@ export default async function PublicLayout({
   const tenant = await resolveTenant(tenantIdentifier)
   if (!tenant) return <>{children}</>
 
-  const nav = orderNav(await listPublishedPages(tenant.id))
+  const [pages, postSlugs] = await Promise.all([
+    listPublishedPages(tenant.id),
+    listPublishedPostSlugs(tenant.id),
+  ])
+  const nav = withBlogLink(orderNav(pages), postSlugs.length > 0)
   const contact = tenant.config?.contact
   const year = new Date().getFullYear()
   const jsonLd = localBusinessJsonLd(tenant)

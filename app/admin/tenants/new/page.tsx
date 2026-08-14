@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createTenant } from './actions'
+import { listTemplates } from '@/lib/templates'
 
 export default async function NewTenantPage({
   searchParams,
@@ -73,6 +74,28 @@ export default async function NewTenantPage({
             <option value="tier_2">tier_2 — Web + Reservas</option>
             <option value="tier_3">tier_3 — Sistema Conectado</option>
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="template" className="block text-sm font-medium text-gray-700 mb-1">
+            Plantilla de arranque
+          </label>
+          <select
+            id="template"
+            name="template"
+            defaultValue=""
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            <option value="">Vacía (sin páginas)</option>
+            {listTemplates().map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            Crea páginas iniciales publicadas y un branding por defecto. El cliente lo personaliza en el builder.
+          </p>
         </div>
 
         <div className="pt-2 flex items-center justify-end gap-3">

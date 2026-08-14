@@ -54,6 +54,7 @@ Producto y sistema visual: `PRODUCT.md` · `DESIGN.md`.
 - **Autonomía dentro del paso.** No preguntes a mitad: ejecuta el paso entero (código + tests + verify + plan.md + commit + PR + merge) y para **al final** para que el usuario revise. Solo interrumpe si algo es irreversible, ambiguo de verdad, o rompe una invariante.
 - **Definition of done:** un paso no se marca `[x]` sin `npm run verify` en verde. Si falla, el paso sigue abierto.
 - **Actualizar `plan.md` SIEMPRE**, sin que te lo pidan: marcar `[x]` y refrescar `## Contexto actual` (rama, archivos nuevos, siguiente paso). Un hook te lo recordará si se te olvida.
+- **Al cerrar un paso, dos cosas: qué has hecho y cómo verlo.** El informe final SIEMPRE termina con instrucciones concretas para ver el resultado en el navegador: comando de arranque, URL exacta (con puerto y tenant), con qué usuario entrar si hace falta, y qué debería verse. Nada de "ya está hecho" a secas — si el usuario no lo puede mirar, el paso no está entregado.
 - **Tests obligatorios** para cualquier lógica (parseos, validaciones, ramas de decisión, sanitizado). No aserciones triviales de render.
 - **Nunca abrir `.env.local`.** Un hook lo bloquea. Si falta una variable, dilo y señala `.env.example`.
 - **Next.js 16.2.7 ≠ el Next que conoces.** Lee `node_modules/next/dist/docs/` antes de tocar middleware/proxy, routing, `params` async o server actions.

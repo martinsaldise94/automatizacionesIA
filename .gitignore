@@ -41,15 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
-.claude
-references
-plan.md
-
-AGENTS.md
-CLAUDE.md
-PRODUCT.md
-DESIGN.md
-.nvmrc
+# Claude Code — la capa de contexto SÍ se commitea (skill, comandos, agentes,
+# hooks, referencias, plan y docs de producto son contexto compartido del repo).
+# Solo queda fuera lo personal de cada máquina:
+.claude/settings.local.json
 
 .playwright-cli

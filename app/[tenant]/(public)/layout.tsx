@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { resolveTenant } from '@/lib/tenant'
 import { listPublishedPages } from '@/lib/db/pages'
 import { orderNav } from '@/lib/nav'
+import { localBusinessJsonLd } from '@/lib/seo'
 
 // Chrome de la web PÚBLICA del tenant (header con navegación + footer). Envuelve
 // las páginas del builder y el blog. El branding (CSS vars) lo pone el layout de
@@ -23,9 +24,17 @@ export default async function PublicLayout({
   const nav = orderNav(await listPublishedPages(tenant.id))
   const contact = tenant.config?.contact
   const year = new Date().getFullYear()
+  const jsonLd = localBusinessJsonLd(tenant)
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-[var(--brand-font)]">
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          // JSON.stringify de datos controlados por nosotros (no HTML de usuario).
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <header className="sticky top-0 z-40 border-b border-black/5 bg-white/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="text-lg font-semibold tracking-tight text-gray-900">

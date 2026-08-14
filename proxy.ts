@@ -16,11 +16,15 @@ export function proxy(request: NextRequest) {
   baseHeaders.delete('x-tenant')
   baseHeaders.set('x-pathname', pathname)
 
+  // sitemap.xml y robots.txt SÍ son por tenant (se reescriben aunque lleven
+  // extensión); el resto de archivos con extensión pasan sin tocar.
+  const isTenantSeoFile = pathname === '/sitemap.xml' || pathname === '/robots.txt'
+
   // Rutas que no pertenecen a ningún tenant — pasar sin reescribir
   if (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/_next') ||
-    /\.\w+$/.test(pathname) // archivos estáticos con extensión
+    (/\.\w+$/.test(pathname) && !isTenantSeoFile) // archivos estáticos con extensión
   ) {
     return NextResponse.next({ request: { headers: baseHeaders } })
   }

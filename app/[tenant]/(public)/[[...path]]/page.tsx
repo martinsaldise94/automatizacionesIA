@@ -1,12 +1,35 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { resolveTenant } from '@/lib/tenant'
 import { getPublishedPage } from '@/lib/db/pages'
 import { buildTenantContext } from '@/lib/builder/tenant-context'
+import { pageMetadata } from '@/lib/seo'
 import { PublicRender } from '@/components/builder/PublicRender'
 
-// Web pública del tenant. El middleware reescribe el host del cliente a
-// /[tenant]/... → aquí `params.tenant` es el slug/dominio resuelto.
-// Render mínimo del Paso 4: layout completo, branding, SEO y navegación → Fase 5.
+// path indefinido = home ('/'); ['servicios'] = '/servicios'
+function toPagePath(path?: string[]): string {
+  return path && path.length > 0 ? `/${path.join('/')}` : '/'
+}
+
+// SEO por página: título/descripción del tenant + título de la página.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tenant: string; path?: string[] }>
+}): Promise<Metadata> {
+  const { tenant: tenantIdentifier, path } = await params
+  const tenant = await resolveTenant(tenantIdentifier)
+  if (!tenant) return { title: 'No encontrado' }
+
+  const pagePath = toPagePath(path)
+  const page = await getPublishedPage(tenant.id, pagePath)
+  if (!page) return { title: 'No encontrado' }
+
+  return pageMetadata(tenant, page, pagePath === '/')
+}
+
+// Web pública del tenant. El proxy reescribe el host del cliente a /[tenant]/... →
+// aquí `params.tenant` es el slug/dominio resuelto.
 export default async function TenantPage({
   params,
 }: {
@@ -18,8 +41,7 @@ export default async function TenantPage({
   const tenant = await resolveTenant(tenantIdentifier)
   if (!tenant) notFound()
 
-  // path indefinido = home ('/'); ['servicios'] = '/servicios'
-  const pagePath = path && path.length > 0 ? `/${path.join('/')}` : '/'
+  const pagePath = toPagePath(path)
 
   const page = await getPublishedPage(tenant.id, pagePath)
   if (!page) notFound()

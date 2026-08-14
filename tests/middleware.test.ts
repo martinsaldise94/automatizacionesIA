@@ -108,3 +108,41 @@ describe('middleware — rutas excluidas', () => {
     expect(rewriteUrl(res)).toBeNull()
   })
 })
+
+// sitemap.xml y robots.txt son la excepción a "todo lo que lleva extensión pasa
+// sin tocar": cada tenant tiene los suyos, así que deben reescribirse igual que
+// una página. Si dejan de hacerlo, todos los tenants comparten (o pierden) su SEO.
+describe('middleware — sitemap.xml y robots.txt por tenant', () => {
+  it('/sitemap.xml reescribe a /casapepe/sitemap.xml', () => {
+    const res = middleware(req('https://casapepe.miagencia.com/sitemap.xml'))
+    expect(rewriteUrl(res)).toContain('/casapepe/sitemap.xml')
+  })
+
+  it('/robots.txt reescribe a /casapepe/robots.txt', () => {
+    const res = middleware(req('https://casapepe.miagencia.com/robots.txt'))
+    expect(rewriteUrl(res)).toContain('/casapepe/robots.txt')
+  })
+
+  it('inyecta x-tenant también en esas rutas', () => {
+    const res = middleware(req('https://casapepe.miagencia.com/sitemap.xml'))
+    expect(res.headers.get('x-middleware-request-x-tenant')).toBe('casapepe')
+  })
+
+  it('en dominio propio usa el host como identificador', () => {
+    const res = middleware(req('https://casapepe.es/sitemap.xml'))
+    expect(rewriteUrl(res)).toContain('/casapepe.es/sitemap.xml')
+  })
+
+  it('en el dominio raíz NO se reescriben (son de la plataforma)', () => {
+    expect(rewriteUrl(middleware(req('https://miagencia.com/sitemap.xml')))).toBeNull()
+    expect(rewriteUrl(middleware(req('https://miagencia.com/robots.txt')))).toBeNull()
+  })
+
+  it('la excepción es solo para esos dos: otros .xml/.txt siguen pasando sin tocar', () => {
+    expect(rewriteUrl(middleware(req('https://casapepe.miagencia.com/feed.xml')))).toBeNull()
+    expect(rewriteUrl(middleware(req('https://casapepe.miagencia.com/ads.txt')))).toBeNull()
+    expect(
+      rewriteUrl(middleware(req('https://casapepe.miagencia.com/blog/sitemap.xml'))),
+    ).toBeNull()
+  })
+})

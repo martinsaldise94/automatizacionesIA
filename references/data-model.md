@@ -88,11 +88,27 @@ Historial de conversaciones del agente IA y WhatsApp.
 |---------|------|-------|
 | `id` | uuid PK | |
 | `tenant_id` | uuid FK | |
-| `lead_id` | uuid FK nullable | |
+| `lead_id` | uuid FK nullable | se rellena al derivar, en **todo** el hilo |
+| `conversation_id` | uuid nullable | hilo del agente; lo genera el **servidor** |
 | `role` | text | `user` \| `assistant` \| `human` |
 | `channel` | text | `web` \| `whatsapp` |
 | `content` | text | |
 | `created_at` | timestamptz | |
+
+#### Por qué `conversation_id` además de `lead_id`
+
+Una conversación se agrupaba por `lead_id`, pero el visitante de una web **no tiene lead**: llega, pregunta y a lo mejor nunca se identifica. Sin clave de hilo sus turnos quedan sueltos y el agente no puede leer lo que se dijo dos mensajes antes.
+
+Las alternativas se descartaron:
+
+- **Crear un lead en el primer mensaje** → el CRM del tier_3 se llena de fichas vacías de curiosos y deja de valer para lo que vale.
+- **Guardar la conversación solo en el navegador** y persistir al derivar → se pierde justo lo más útil, las conversaciones que **no** convierten: son las que le dicen al negocio qué le preguntan y no sabe responder.
+
+Con `conversation_id` los turnos se hilan desde el primer mensaje sin crear lead. Al derivar se crea el lead y se rellena `lead_id` en **todo** el hilo (`linkConversationToLead`), así que el CRM ve la conversación entera, incluido lo que pasó antes de dar el nombre — que suele ser lo que explica por qué contactó.
+
+**El id lo genera el servidor** (`newConversationId`, uuid v4 con el generador criptográfico). El servidor carga el historial a partir de ese id, así que uno predecible dejaría leer el hilo de otro visitante. Aun siendo inadivinable, toda query filtra **además** por `tenant_id`: con service role no hay RLS debajo, ese `.eq` es la única barrera.
+
+**El historial nunca lo manda el cliente.** El navegador envía solo su `conversationId` y el mensaje nuevo. Si aceptáramos turnos del cliente, cualquiera podría inventarse mensajes de `assistant` —*"claro, te hacemos un 90% de descuento"*— y el agente los tomaría por suyos y seguiría el hilo. Es inyección de prompt por la puerta de atrás.
 
 ## Usuarios del cliente (dueño del negocio)
 

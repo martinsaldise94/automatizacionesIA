@@ -94,7 +94,7 @@ export function LeadForm({ title, subtitle, buttonText, background }: LeadFormPr
 
             {/* Honeypot: oculto para personas, tentador para bots. aria-hidden y
                 tabIndex -1 para que un lector de pantalla tampoco lo ofrezca. */}
-            <div aria-hidden className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
+            <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
               <label>
                 No rellenar
                 <input name="website" tabIndex={-1} autoComplete="off" />

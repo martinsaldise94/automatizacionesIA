@@ -84,6 +84,11 @@ export type Message = {
   id: string
   tenant_id: string
   lead_id: string | null
+  // Hilo de conversación (uuid v4 generado en SERVIDOR). Agrupa los turnos de
+  // un visitante anónimo sin obligar a crear un lead; al derivar se rellena
+  // `lead_id` en todo el hilo. Null en mensajes sueltos, como el texto del
+  // formulario de contacto. Ver `0010_messages_conversation.sql`.
+  conversation_id: string | null
   role: 'user' | 'assistant' | 'human'
   channel: 'web' | 'whatsapp'
   content: string

@@ -3,7 +3,7 @@ import { resolveTenant } from '@/lib/tenant'
 import { listPublishedPages } from '@/lib/db/pages'
 import { listPublishedPostSlugs } from '@/lib/db/posts'
 import { orderNav, withBlogLink } from '@/lib/nav'
-import { localBusinessJsonLd } from '@/lib/seo'
+import { localBusinessJsonLd, jsonLdScript } from '@/lib/seo'
 
 // Chrome de la web PÚBLICA del tenant (header con navegación + footer). Envuelve
 // las páginas del builder y el blog. El branding (CSS vars) lo pone el layout de
@@ -36,8 +36,9 @@ export default async function PublicLayout({
       {jsonLd && (
         <script
           type="application/ld+json"
-          // JSON.stringify de datos controlados por nosotros (no HTML de usuario).
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // `jsonLdScript` escapa < y > → un "</script>" en el nombre o la
+          // descripción del tenant no puede cerrar esta etiqueta. Ver lib/seo.ts.
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
         />
       )}
       <header className="sticky top-0 z-40 border-b border-black/5 bg-white/85 backdrop-blur">

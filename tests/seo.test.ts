@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pageTitle, pageMetadata, localBusinessJsonLd } from '@/lib/seo'
+import { pageTitle, pageMetadata, localBusinessJsonLd, jsonLdScript } from '@/lib/seo'
 import type { Tenant } from '@/lib/supabase/types'
 
 function tenant(overrides: Partial<Tenant> = {}): Tenant {
@@ -67,5 +67,40 @@ describe('localBusinessJsonLd', () => {
     const ld = localBusinessJsonLd(tenant())!
     expect(ld.telephone).toBeUndefined()
     expect(ld.url).toBeUndefined()
+  })
+})
+
+describe('jsonLdScript', () => {
+  // El JSON-LD se inyecta con dangerouslySetInnerHTML dentro de un <script>.
+  // JSON.stringify NO escapa '<' ni '/', así que un '</script>' en cualquier
+  // campo de texto del tenant cierra la etiqueta y ejecuta lo que venga detrás.
+  // Hoy esos campos los escribe el admin; con el autoservicio los escribirá el
+  // cliente. Esto es la barrera.
+
+  it('neutraliza un cierre de script en el nombre del negocio', () => {
+    const t = tenant({ name: 'Casa Pepe</script><script>alert(1)</script>' })
+    const html = jsonLdScript(localBusinessJsonLd(t)!)
+    expect(html).not.toContain('</script>')
+    expect(html).not.toContain('<script>')
+  })
+
+  it('neutraliza un cierre de script en la descripción SEO', () => {
+    const t = tenant({
+      config: { seo: { title: 'X', description: '</script><img src=x onerror=alert(1)>' } },
+    } as Partial<Tenant>)
+    const html = jsonLdScript(localBusinessJsonLd(t)!)
+    expect(html).not.toContain('</script>')
+    expect(html).not.toContain('<img')
+  })
+
+  it('escapa todo < y > venga de donde venga', () => {
+    const html = jsonLdScript({ a: '<>', b: ['<b>'] })
+    expect(html).not.toMatch(/[<>]/)
+  })
+
+  it('sigue siendo JSON válido y con los mismos datos tras escapar', () => {
+    const original = { '@type': 'LocalBusiness', name: 'Casa </script> Pepe', n: 3 }
+    const parsed = JSON.parse(jsonLdScript(original))
+    expect(parsed).toEqual(original)
   })
 })

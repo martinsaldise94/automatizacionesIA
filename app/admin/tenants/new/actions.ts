@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/admin-auth'
 import { validateSlug } from '@/lib/slug'
 import {
   tenantSlugExists,
@@ -14,6 +15,10 @@ import type { TenantConfig } from '@/lib/supabase/types'
 const VALID_PLANS = ['tier_1', 'tier_2', 'tier_3'] as const
 
 export async function createTenant(formData: FormData) {
+  // PRIMERA línea, siempre. El guard del layout no protege una server action:
+  // es un endpoint POST propio, alcanzable sin pasar por la página.
+  await requireAdmin()
+
   const slug = ((formData.get('slug') as string) ?? '').trim().toLowerCase()
   const name = ((formData.get('name') as string) ?? '').trim()
   const plan = ((formData.get('plan') as string) ?? 'tier_1').trim()

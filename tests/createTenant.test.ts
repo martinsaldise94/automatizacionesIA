@@ -5,6 +5,18 @@ const db = vi.hoisted(() => ({
   existing: null as { id: string } | null,
   insertedId: 'new-uuid-123' as string | null,
   insertError: null as { message: string } | null,
+  // Cuenta escrituras: sirve para probar que un no-admin ni siquiera llega a la DB.
+  inserts: 0,
+}))
+
+// Sesión de admin controlable. `requireAdmin` real hace redirect('/admin/login');
+// aquí se reproduce ese contrato para poder probar los dos lados.
+const auth = vi.hoisted(() => ({ isAdmin: true }))
+
+vi.mock('@/lib/admin-auth', () => ({
+  requireAdmin: async () => {
+    if (!auth.isAdmin) throw new Error('NEXT_REDIRECT:/admin/login')
+  },
 }))
 
 vi.mock('@/lib/supabase/service', () => ({
@@ -15,14 +27,17 @@ vi.mock('@/lib/supabase/service', () => ({
           maybeSingle: async () => ({ data: db.existing, error: null }),
         }),
       }),
-      insert: () => ({
-        select: () => ({
-          single: async () => ({
-            data: db.insertedId ? { id: db.insertedId } : null,
-            error: db.insertError,
+      insert: () => {
+        db.inserts += 1
+        return {
+          select: () => ({
+            single: async () => ({
+              data: db.insertedId ? { id: db.insertedId } : null,
+              error: db.insertError,
+            }),
           }),
-        }),
-      }),
+        }
+      },
     }),
   }),
 }))
@@ -46,6 +61,31 @@ describe('createTenant', () => {
     db.existing = null
     db.insertedId = 'new-uuid-123'
     db.insertError = null
+    db.inserts = 0
+    auth.isAdmin = true
+  })
+
+  // Esta action se publicó SIN guard: el guard del layout no protege una server
+  // action, que es un endpoint POST propio. Ver tests/adminGuards.test.ts.
+  it('rechaza a quien no es admin y no llega a escribir en la DB', async () => {
+    auth.isAdmin = false
+
+    await expect(
+      createTenant(makeFormData({ slug: 'casa-pepe', name: 'Casa Pepe', plan: 'tier_1' }))
+    ).rejects.toThrow('NEXT_REDIRECT:/admin/login')
+
+    expect(db.inserts).toBe(0)
+  })
+
+  it('corta al no-admin antes de validar la entrada (no filtra si el slug existe)', async () => {
+    auth.isAdmin = false
+    db.existing = { id: 'otro-tenant' }
+
+    // Si el guard fuese después de la validación, el mensaje de error revelaría
+    // qué slugs están ocupados a cualquiera. Debe salir por /admin/login.
+    await expect(
+      createTenant(makeFormData({ slug: 'casa-pepe', name: 'Casa Pepe', plan: 'tier_1' }))
+    ).rejects.toThrow('NEXT_REDIRECT:/admin/login')
   })
 
   it('redirige a /admin/tenants/[id] al crear con éxito', async () => {

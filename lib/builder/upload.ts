@@ -14,6 +14,19 @@ export const STORAGE_BUCKET = 'tenant-assets'
 
 export type ImageFileError = 'tipo' | 'tamano'
 
+// Resultado de subir una imagen. Vive aquí (y no junto a la server action) para
+// que el componente cliente pueda tiparlo sin importar nada de `app/`.
+export type UploadResult = { ok: true; url: string } | { ok: false; error: string }
+
+// Mensaje para el dueño del negocio. Compartido por la action (servidor) y por la
+// validación temprana del componente (cliente): un solo texto, no dos que se
+// desincronizan.
+export function imageErrorMessage(reason: ImageFileError): string {
+  return reason === 'tipo'
+    ? 'Formato no permitido (usa JPG, PNG o WEBP).'
+    : 'La imagen supera el tamaño máximo (5 MB).'
+}
+
 // Mapea el MIME permitido a su extensión canónica.
 const MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',

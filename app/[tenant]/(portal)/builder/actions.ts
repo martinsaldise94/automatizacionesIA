@@ -1,40 +1,14 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { resolveTenantForPortal } from '@/lib/tenant'
-import { canAccessPortal } from '@/lib/guard'
+import { authorizePortal } from '@/lib/portal-auth'
 import { normalizePagePath } from '@/lib/builder/pagePath'
 import { validatePuckData } from '@/lib/builder/publish'
-import {
-  validateImageFile,
-  extForImageMime,
-  buildAssetPath,
-  STORAGE_BUCKET,
-} from '@/lib/builder/upload'
-import { createServiceClient } from '@/lib/supabase/service'
 import { builderConfig } from '@/lib/builder/config'
 import { createPage, saveDraft, updatePageMeta, deletePage, publishPage } from '@/lib/db/pages'
 
 // Bloques registrados (fuente de verdad: la config de Puck).
 const REGISTERED_BLOCK_TYPES = Object.keys(builderConfig.components)
-
-// Resuelve el tenant del portal y verifica que el usuario puede editarlo.
-// El tenant viene del header de confianza del middleware (x-tenant), nunca del
-// cliente. Devuelve el id del tenant autorizado o null.
-async function authorizeBuilder(): Promise<string | null> {
-  const tenantIdentifier = (await headers()).get('x-tenant') ?? ''
-  const tenant = await resolveTenantForPortal(tenantIdentifier)
-  if (!tenant) return null
-
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  return canAccessPortal(user, tenant.id) ? tenant.id : null
-}
 
 // Crea una página nueva. Devuelve el id para que el cliente navegue en DURO a su
 // editor (window.location): un redirect() blando a /builder/{id} caería en 404
@@ -42,7 +16,7 @@ async function authorizeBuilder(): Promise<string | null> {
 export type CreatePageResult = { ok: true; pageId: string } | { ok: false; error: string }
 
 export async function createPageAction(formData: FormData): Promise<CreatePageResult> {
-  const tenantId = await authorizeBuilder()
+  const tenantId = await authorizePortal()
   if (!tenantId) return { ok: false, error: 'No autorizado.' }
 
   const title = ((formData.get('title') as string) ?? '').trim()
@@ -69,7 +43,7 @@ export async function saveDraftAction(
   pageId: string,
   draftData: Record<string, unknown>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const tenantId = await authorizeBuilder()
+  const tenantId = await authorizePortal()
   if (!tenantId) return { ok: false, error: 'No autorizado.' }
 
   const { error } = await saveDraft(tenantId, pageId, draftData)
@@ -84,7 +58,7 @@ export async function publishAction(
   pageId: string,
   draftData: Record<string, unknown>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const tenantId = await authorizeBuilder()
+  const tenantId = await authorizePortal()
   if (!tenantId) return { ok: false, error: 'No autorizado.' }
 
   const validation = validatePuckData(draftData, REGISTERED_BLOCK_TYPES)
@@ -99,42 +73,8 @@ export async function publishAction(
   return { ok: true }
 }
 
-// Sube una imagen a Storage `tenant-assets/{tenant_id}/...` y devuelve su URL
-// pública. Escritura server-side con service role (bypassa RLS); el tenant se
-// resuelve en servidor. Valida MIME/tamaño real (jpg/png/webp, ≤5MB; SVG no).
-// ⚠️ Requiere el bucket creado (migración 0007) para funcionar en vivo.
-export type UploadResult = { ok: true; url: string } | { ok: false; error: string }
-
-export async function uploadImageAction(formData: FormData): Promise<UploadResult> {
-  const tenantId = await authorizeBuilder()
-  if (!tenantId) return { ok: false, error: 'No autorizado.' }
-
-  const file = formData.get('file')
-  if (!(file instanceof File)) return { ok: false, error: 'No se recibió ningún archivo.' }
-
-  const check = validateImageFile(file.type, file.size)
-  if (!check.ok) {
-    return {
-      ok: false,
-      error:
-        check.reason === 'tipo'
-          ? 'Formato no permitido (usa JPG, PNG o WEBP).'
-          : 'La imagen supera el tamaño máximo (5 MB).',
-    }
-  }
-
-  const ext = extForImageMime(file.type)!
-  const path = buildAssetPath(tenantId, crypto.randomUUID(), ext)
-
-  const supabase = createServiceClient()
-  const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false })
-  if (error) return { ok: false, error: 'No se pudo subir la imagen.' }
-
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path)
-  return { ok: true, url: data.publicUrl }
-}
+// La subida de imágenes vive en `(portal)/upload.ts`: la comparten el blog y el
+// futuro campo de imagen de Puck.
 
 // Renombra/mueve una página (título + path). Revalida la lista.
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -143,7 +83,7 @@ export async function updatePageMetaAction(
   pageId: string,
   input: { title: string; path: string },
 ): Promise<ActionResult> {
-  const tenantId = await authorizeBuilder()
+  const tenantId = await authorizePortal()
   if (!tenantId) return { ok: false, error: 'No autorizado.' }
 
   const title = input.title.trim()
@@ -166,7 +106,7 @@ export async function updatePageMetaAction(
 
 // Borra una página. Revalida la lista.
 export async function deletePageAction(pageId: string): Promise<ActionResult> {
-  const tenantId = await authorizeBuilder()
+  const tenantId = await authorizePortal()
   if (!tenantId) return { ok: false, error: 'No autorizado.' }
 
   const { error } = await deletePage(tenantId, pageId)

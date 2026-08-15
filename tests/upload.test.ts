@@ -3,6 +3,7 @@ import {
   validateImageFile,
   extForImageMime,
   buildAssetPath,
+  imageErrorMessage,
   MAX_IMAGE_BYTES,
 } from '@/lib/builder/upload'
 
@@ -49,5 +50,26 @@ describe('extForImageMime', () => {
 describe('buildAssetPath', () => {
   it('construye {tenant}/{id}.{ext}', () => {
     expect(buildAssetPath('t1', 'abc', 'png')).toBe('t1/abc.png')
+  })
+})
+
+describe('imageErrorMessage', () => {
+  // El mismo texto lo usan la server action y la validación temprana del
+  // componente cliente. Si se duplicaran, acabarían diciendo cosas distintas.
+  it('explica el formato no permitido sin jerga', () => {
+    expect(imageErrorMessage('tipo')).toContain('JPG, PNG o WEBP')
+  })
+
+  it('explica el límite de tamaño', () => {
+    expect(imageErrorMessage('tamano')).toContain('5 MB')
+  })
+
+  it('cubre todas las razones de rechazo de validateImageFile', () => {
+    const svg = validateImageFile('image/svg+xml', 100)
+    const enorme = validateImageFile('image/png', MAX_IMAGE_BYTES + 1)
+    expect(svg.ok).toBe(false)
+    expect(enorme.ok).toBe(false)
+    if (!svg.ok) expect(imageErrorMessage(svg.reason)).toBeTruthy()
+    if (!enorme.ok) expect(imageErrorMessage(enorme.reason)).toBeTruthy()
   })
 })

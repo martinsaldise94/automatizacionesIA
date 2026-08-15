@@ -60,7 +60,21 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluir archivos estáticos de Next.js e imágenes; incluir todo lo demás
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Solo se excluyen las rutas que NUNCA llegan a código de aplicación:
+    // los assets compilados de Next.
+    //
+    // Antes se excluían también `favicon.ico` y todo lo acabado en .svg/.png/
+    // .jpg/.jpeg/.gif/.webp, y eso era un agujero latente: **lo excluido del
+    // matcher no pasa por esta función, así que su `x-tenant` NO se borra**.
+    // Hoy no hay ninguna ruta de servidor con esas extensiones, pero el día
+    // que exista una (`opengraph-image`, un `route.ts` que devuelva un PNG),
+    // recibiría el header tal cual lo mandó el cliente — y `x-tenant` es lo
+    // que decide de qué cliente son los datos.
+    //
+    // La exclusión tampoco hacía falta para el enrutado: la comprobación de
+    // "path con extensión" de arriba ya evita reescribir esas peticiones.
+    // Coste: el proxy corre también sobre las imágenes de /public. Barato,
+    // y el grueso del tráfico estático sigue fuera por `_next/*`.
+    '/((?!_next/static|_next/image).*)',
   ],
 }

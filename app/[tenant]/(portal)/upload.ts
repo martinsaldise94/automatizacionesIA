@@ -7,6 +7,8 @@ import {
   extForImageMime,
   imageErrorMessage,
   buildAssetPath,
+  sniffImageMime,
+  SNIFF_BYTES,
   STORAGE_BUCKET,
   type UploadResult,
 } from '@/lib/builder/upload'
@@ -29,16 +31,28 @@ export async function uploadImageAction(formData: FormData): Promise<UploadResul
   const file = formData.get('file')
   if (!(file instanceof File)) return { ok: false, error: 'No se recibió ningún archivo.' }
 
+  // El tamaño sí se puede creer (lo mide el runtime, no el cliente). El tipo
+  // declarado se usa solo para dar el error de formato en su versión amable.
   const check = validateImageFile(file.type, file.size)
   if (!check.ok) return { ok: false, error: imageErrorMessage(check.reason) }
 
-  const ext = extForImageMime(file.type)!
+  // LO QUE MANDA SON LOS BYTES, no `file.type`. Ese lo declara el navegador:
+  // renombrar un .html a .jpg y anunciarlo como image/jpeg no cuesta nada.
+  // A partir de aquí se ignora lo que el cliente dijo y se usa el formato real
+  // —también para el `contentType` con el que se sirve y para la extensión—,
+  // así que un desajuste no puede colarse por ningún lado.
+  const cabecera = new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer())
+  const mimeReal = sniffImageMime(cabecera)
+
+  if (!mimeReal) return { ok: false, error: imageErrorMessage('tipo') }
+
+  const ext = extForImageMime(mimeReal)!
   const path = buildAssetPath(tenantId, crypto.randomUUID(), ext)
 
   const supabase = createServiceClient()
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, file, { contentType: mimeReal, upsert: false })
 
   if (error) {
     // El fallo más probable en un entorno nuevo es que el bucket no exista aún.

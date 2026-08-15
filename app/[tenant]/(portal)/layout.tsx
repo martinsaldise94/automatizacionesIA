@@ -45,6 +45,9 @@ export default async function PortalLayout({
             <Link href="/builder" className="text-gray-600 hover:text-gray-900">
               Páginas
             </Link>
+            <Link href="/posts" className="text-gray-600 hover:text-gray-900">
+              Blog
+            </Link>
             <Link href="/branding" className="text-gray-600 hover:text-gray-900">
               Marca
             </Link>

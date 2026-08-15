@@ -149,10 +149,13 @@ export async function createPost(
   return { id: data?.id ?? null, error }
 }
 
+// `publishedAt` lo calcula la action con `nextPublishedAt` (lib/posts.ts), que es
+// donde vive la regla y está testeada. Aquí solo se escribe lo que llega: la capa
+// de datos no decide fechas.
 export async function updatePost(
   tenantId: string,
   postId: string,
-  input: PostInput,
+  input: PostInput & { publishedAt: string | null },
 ): Promise<{ error: DbError }> {
   const supabase = createServiceClient()
   const { error } = await supabase
@@ -164,8 +167,7 @@ export async function updatePost(
       cover_url: input.coverUrl,
       content: input.content,
       status: input.status,
-      // Fija published_at la primera vez que se publica; no lo pisa si ya existe.
-      ...(input.status === 'published' ? {} : { published_at: null }),
+      published_at: input.publishedAt,
     })
     .eq('tenant_id', tenantId)
     .eq('id', postId)

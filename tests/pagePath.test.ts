@@ -46,6 +46,13 @@ describe('normalizePagePath', () => {
     expect(normalizePagePath('/reservar').ok).toBe(false)
   })
 
+  it('reserva también las rutas del portal (marca y editor de blog)', () => {
+    // Si no, la página del dueño quedaría inalcanzable: la ruta concreta del
+    // portal siempre gana al catch-all.
+    expect(normalizePagePath('/branding').ok).toBe(false)
+    expect(normalizePagePath('/posts').ok).toBe(false)
+  })
+
   it('permite una ruta reservada como segmento NO inicial', () => {
     expect(normalizePagePath('/sobre/blog')).toEqual({ ok: true, path: '/sobre/blog' })
   })

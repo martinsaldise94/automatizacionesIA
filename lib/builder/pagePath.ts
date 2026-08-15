@@ -15,6 +15,8 @@ export type PagePathResult = { ok: true; path: string } | { ok: false; error: st
 const RESERVED_SEGMENTS = new Set([
   'auth',
   'builder',
+  'branding', // portal: editor de marca
+  'posts', // portal: editor de blog (el blog PÚBLICO es /blog)
   'blog',
   'api',
   'reservar',

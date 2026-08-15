@@ -19,6 +19,13 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: {
       getUser: async () => ({ data: { user: { app_metadata: { role: 'admin' } } } }),
+      // Sesión ya elevada a aal2: estos tests van del comportamiento de las
+      // actions, no del segundo factor (que tiene los suyos en mfa.test.ts).
+      mfa: {
+        getAuthenticatorAssuranceLevel: async () => ({
+          data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+        }),
+      },
     },
   }),
 }))

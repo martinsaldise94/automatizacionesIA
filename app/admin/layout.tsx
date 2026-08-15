@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isAdmin } from '@/lib/admin'
+import { isMfaPath, mfaRedirectPath } from '@/lib/admin-auth'
 import { signOut } from './login/actions'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // tiene sesión válida pero NUNCA debe entrar aquí.
   if (!user || !isAdmin(user)) {
     redirect('/admin/login')
+  }
+
+  // Segundo factor. Las propias pantallas de MFA quedan fuera: exigirles aal2
+  // sería pedir el código para poder teclear el código.
+  if (!isMfaPath(pathname)) {
+    const destino = await mfaRedirectPath(supabase)
+    if (destino) redirect(destino)
   }
 
   return (

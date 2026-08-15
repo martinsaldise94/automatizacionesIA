@@ -2,16 +2,17 @@ import { cn } from '@/lib/cn'
 
 type ButtonVariant = 'brand' | 'brand-outline' | 'secondary' | 'ghost'
 type ButtonSize    = 'sm' | 'md' | 'lg'
-type CtaType       = 'link' | 'whatsapp' | 'booking'
 
+// Button NO sabe qué es un CTA de WhatsApp. Antes sí, y con `phone` opcional:
+// un bloque que olvidaba pasarlo caía en href="#" y el botón parecía funcionar.
+// Ahora el destino lo resuelve `resolveCtaLink` (lib/builder/cta.ts), que
+// devuelve null si no hay destino y deja que el bloque oculte el botón.
 type ButtonProps = {
   children: React.ReactNode
   variant?: ButtonVariant
   size?: ButtonSize
   // Cuando es enlace
-  ctaType?: CtaType
   href?: string
-  phone?: string        // para ctaType='whatsapp' — número en formato internacional sin +
   // Cuando es botón de formulario
   type?: 'button' | 'submit' | 'reset'
   disabled?: boolean
@@ -34,24 +35,11 @@ const sizeMap: Record<ButtonSize, string> = {
 
 const base = 'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none'
 
-function buildHref(ctaType: CtaType, href?: string, phone?: string): string {
-  if (ctaType === 'whatsapp' && phone) {
-    const clean = phone.replace(/\D/g, '')
-    return `https://wa.me/${clean}`
-  }
-  // `||` y no `??`: una cadena vacía (campo sin rellenar) debe usar el fallback,
-  // no convertirse en href="" (que recarga la página al pulsar).
-  if (ctaType === 'booking') return href || '/reservar'
-  return href || '#'
-}
-
 export function Button({
   children,
   variant = 'brand',
   size = 'md',
-  ctaType,
   href,
-  phone,
   type = 'button',
   disabled,
   className,
@@ -59,14 +47,13 @@ export function Button({
 }: ButtonProps) {
   const cls = cn(base, variantMap[variant], sizeMap[size], className)
 
-  if (ctaType || href) {
-    const url = ctaType ? buildHref(ctaType, href, phone) : (href ?? '#')
+  if (href) {
     return (
       <a
-        href={url}
+        href={href}
         className={cls}
-        target={newTab || ctaType === 'whatsapp' ? '_blank' : undefined}
-        rel={newTab || ctaType === 'whatsapp' ? 'noopener noreferrer' : undefined}
+        target={newTab ? '_blank' : undefined}
+        rel={newTab ? 'noopener noreferrer' : undefined}
       >
         {children}
       </a>

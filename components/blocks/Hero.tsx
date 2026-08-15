@@ -1,5 +1,9 @@
+'use client'
+
 import { Section, Container, Heading, Text, Button, FramedImage } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useTenant } from '@/components/builder/TenantProvider'
+import { resolveCtaLink } from '@/lib/builder/cta'
 import type { HeroProps } from '@/lib/builder/config'
 
 // HeroProps.background ('white'|'primary'|'gray') → fondo de Section ('white'|'gray'|'brand'|'dark')
@@ -25,6 +29,11 @@ export function Hero({
   const centered = !showImage
   const imageRight = variant === 'image-right'
 
+  // Mismo criterio que el bloque CTA: el número de WhatsApp sale de la ficha del
+  // tenant, y `link` es null cuando no hay destino válido → no se pinta el botón.
+  const { contact } = useTenant()
+  const link = resolveCtaLink(ctaType, ctaHref, contact?.whatsapp)
+
   const content = (
     <>
       <Heading
@@ -48,13 +57,13 @@ export function Hero({
         </Text>
       )}
 
-      {ctaText && (
+      {ctaText && link && (
         <div className={cn('mt-8 flex flex-wrap items-center gap-4', centered && 'justify-center')}>
           <Button
             variant={onBrand ? 'secondary' : 'brand'}
             size="lg"
-            ctaType={ctaType}
-            href={ctaHref}
+            href={link.href}
+            newTab={link.external}
             className="group"
           >
             {ctaText}

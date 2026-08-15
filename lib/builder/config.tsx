@@ -16,6 +16,7 @@ import { Contact }   from '@/components/blocks/Contact'
 import { Map }       from '@/components/blocks/Map'
 import { Testimonials } from '@/components/blocks/Testimonials'
 import { Spacer }    from '@/components/blocks/Spacer'
+import { LeadForm }  from '@/components/blocks/LeadForm'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
 
@@ -135,6 +136,13 @@ export type RichTextProps = {
   content: string
 }
 
+export type LeadFormProps = {
+  title: string
+  subtitle: string
+  buttonText: string
+  background: 'white' | 'gray'
+}
+
 export type SpacerProps = {
   height: 'sm' | 'md' | 'lg' | 'xl'
 }
@@ -157,6 +165,7 @@ export type BuilderComponents = {
   Video: VideoProps
   LogoGrid: LogoGridProps
   RichText: RichTextProps
+  LeadForm: LeadFormProps
   Spacer: SpacerProps
 }
 
@@ -179,7 +188,7 @@ export const builderConfig: Config<BuilderComponents> = {
     },
     contacto: {
       title: 'Contacto y CTA',
-      components: ['CTA', 'Contact', 'Map'],
+      components: ['CTA', 'LeadForm', 'Contact', 'Map'],
     },
     utilidades: {
       title: 'Utilidades',
@@ -696,6 +705,30 @@ export const builderConfig: Config<BuilderComponents> = {
         content: { type: 'textarea', label: 'Contenido (markdown)' },
       },
       render: (props) => <RichText {...props} />,
+    },
+
+    // ── LeadForm ──────────────────────────────────────────────────────────────
+    LeadForm: {
+      label: 'Formulario de contacto',
+      defaultProps: {
+        title: 'Cuéntanos qué necesitas',
+        subtitle: 'Rellena el formulario y te contactamos enseguida.',
+        buttonText: 'Enviar',
+        background: 'gray',
+      } satisfies LeadFormProps,
+      fields: {
+        title:      { type: 'text', label: 'Título' },
+        subtitle:   { type: 'text', label: 'Subtítulo' },
+        buttonText: { type: 'text', label: 'Texto del botón' },
+        background: {
+          type: 'select', label: 'Fondo',
+          options: [
+            { label: 'Blanco', value: 'white' },
+            { label: 'Gris',   value: 'gray' },
+          ],
+        },
+      },
+      render: (props) => <LeadForm {...props} />,
     },
 
     // ── Spacer ────────────────────────────────────────────────────────────────

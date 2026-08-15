@@ -32,7 +32,7 @@ tests/                  vitest — lógica, no render trivial
 Arquitectura completa, convenciones y modelo de datos: **skill `agency-platform`** (`.claude/skills/agency-platform/SKILL.md`). Léela antes de decidir dónde va algo.
 
 Guías por área — léelas antes de escribir código en esa área, no reconstruyas de memoria:
-`references/builder.md` · `references/data-model.md` · `references/ai-agent.md` · `references/tiers.md` · `references/onboarding.md`
+`references/builder.md` · `references/data-model.md` · `references/ai-agent.md` · `references/tiers.md` · `references/onboarding.md` · `references/security.md`
 
 Estado del desarrollo: `plan.md` (bloque `## Contexto actual` al final).
 Producto y sistema visual: `PRODUCT.md` · `DESIGN.md`.

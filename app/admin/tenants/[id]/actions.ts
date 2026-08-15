@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { isAdmin } from '@/lib/admin'
+import { requireAdmin } from '@/lib/admin-auth'
 import {
   updateTenantBasic,
   updateTenantConfig,
@@ -46,12 +46,6 @@ const aiConfigSchema = z.object({
   faqs:          z.array(z.object({ q: z.string(), a: z.string() })),
   handoffRules:  z.array(z.string()),
 })
-
-async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !isAdmin(user)) redirect('/admin/login')
-}
 
 function err(id: string, msg: string): never {
   redirect(`/admin/tenants/${id}?error=${encodeURIComponent(msg)}`)

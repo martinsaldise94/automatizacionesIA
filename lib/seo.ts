@@ -27,6 +27,20 @@ export function pageMetadata(
   }
 }
 
+// Serializa el JSON-LD para meterlo en un <script type="application/ld+json">.
+//
+// SEGURIDAD: `JSON.stringify` NO escapa `<` ni `/`. Un `</script>` dentro de
+// cualquier campo de texto del tenant (nombre, dirección, descripción SEO)
+// cierra la etiqueta y lo que venga detrás se ejecuta → XSS almacenado en la
+// web pública del cliente. Escapamos `<` y `>` como secuencias unicode: el JSON
+// sigue siendo válido y con el mismo valor al parsearlo, pero ya no puede
+// romper el HTML que lo contiene.
+//
+// Es la única barrera aquí: la CSP aplicada no lleva `script-src` todavía.
+export function jsonLdScript(jsonLd: unknown): string {
+  return JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+}
+
 // Schema.org LocalBusiness (JSON-LD) desde el contacto del tenant. Solo incluye
 // los campos presentes; devuelve null si no hay ni nombre.
 export function localBusinessJsonLd(tenant: Tenant): Record<string, unknown> | null {

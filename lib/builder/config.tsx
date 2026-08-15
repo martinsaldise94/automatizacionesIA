@@ -17,14 +17,20 @@ import { Map }       from '@/components/blocks/Map'
 import { Testimonials } from '@/components/blocks/Testimonials'
 import { Spacer }    from '@/components/blocks/Spacer'
 import { LeadForm }  from '@/components/blocks/LeadForm'
+import { imageField } from '@/components/builder/imageField'
+import { heroFieldsFor, type HeroVariant } from '@/lib/builder/heroFields'
+import type { HeroOverlay } from '@/components/blocks/Hero'
 
 // ─── Props por bloque ─────────────────────────────────────────────────────────
 
 export type HeroProps = {
   title: string
   subtitle: string
-  variant: 'centered' | 'image-left' | 'image-right'
+  variant: HeroVariant
   image: string
+  // Oscurecido de la foto en la variante de fondo. Sin él, el texto sobre una
+  // foto clara es ilegible: no es decoración, es contraste.
+  overlay: HeroOverlay
   ctaText: string
   ctaHref: string
   ctaType: 'link' | 'whatsapp' | 'booking'
@@ -205,23 +211,45 @@ export const builderConfig: Config<BuilderComponents> = {
         subtitle: 'Atendemos a nuestros clientes con la mejor calidad y servicio.',
         variant: 'centered',
         image: '',
+        overlay: 'medio',
         ctaText: 'Contáctanos',
         ctaHref: '',
         ctaType: 'whatsapp',
         background: 'white',
       } satisfies HeroProps,
+      // El campo de imagen solo aparece si el diseño la usa. Antes se mostraba
+      // siempre: el dueño subía una foto en la variante "solo texto", el bloque
+      // la descartaba y desde fuera parecía que la plataforma estaba rota.
+      // No se ofrece un control que no hace nada.
+      //
+      // El cast es necesario: el tipo `Fields` de Puck exige TODAS las claves,
+      // pero omitir una es precisamente cómo su API oculta un campo. El tipo
+      // es más estricto que el contrato real, no al revés.
+      resolveFields: (data, { fields }) =>
+        heroFieldsFor(data.props.variant, fields) as typeof fields,
       fields: {
         title:    { type: 'text',     label: 'Título' },
         subtitle: { type: 'textarea', label: 'Subtítulo' },
         variant: {
-          type: 'select', label: 'Variante',
+          type: 'select', label: 'Diseño',
           options: [
-            { label: 'Centrado',          value: 'centered' },
-            { label: 'Imagen izquierda',  value: 'image-left' },
-            { label: 'Imagen derecha',    value: 'image-right' },
+            // El texto dice lo que hace cada uno. Con "Centrado" a secas nadie
+            // adivina que esa opción descarta la imagen.
+            { label: 'Solo texto, centrado',  value: 'centered' },
+            { label: 'Texto + imagen a la izquierda',  value: 'image-left' },
+            { label: 'Texto + imagen a la derecha',    value: 'image-right' },
+            { label: 'Imagen de fondo a pantalla completa', value: 'image-background' },
           ],
         },
-        image:   { type: 'text', label: 'URL de imagen' },
+        image:   imageField('Imagen'),
+        overlay: {
+          type: 'select', label: 'Oscurecer la foto (para que se lea el texto)',
+          options: [
+            { label: 'Poco',   value: 'suave' },
+            { label: 'Medio',  value: 'medio' },
+            { label: 'Mucho',  value: 'fuerte' },
+          ],
+        },
         ctaText: { type: 'text', label: 'Texto del botón' },
         ctaHref: { type: 'text', label: 'Enlace del botón' },
         ctaType: {
@@ -374,7 +402,7 @@ export const builderConfig: Config<BuilderComponents> = {
             text:   { type: 'textarea', label: 'Texto' },
             author: { type: 'text',     label: 'Nombre' },
             role:   { type: 'text',     label: 'Cargo / descripción' },
-            avatar: { type: 'text',     label: 'URL avatar (opcional)' },
+            avatar: imageField('Avatar (opcional)'),
           },
         },
       },
@@ -467,7 +495,7 @@ export const builderConfig: Config<BuilderComponents> = {
           getItemSummary: (item) => item.alt || 'Imagen',
           defaultItemProps: { image: '', caption: '', alt: '' },
           arrayFields: {
-            image:   { type: 'text', label: 'URL de imagen' },
+            image:   imageField('Imagen'),
             caption: { type: 'text', label: 'Pie de foto (opcional)' },
             alt:     { type: 'text', label: 'Texto alternativo (SEO)' },
           },
@@ -490,7 +518,7 @@ export const builderConfig: Config<BuilderComponents> = {
       fields: {
         title:    { type: 'text',     label: 'Título' },
         text:     { type: 'textarea', label: 'Texto' },
-        image:    { type: 'text',     label: 'URL de imagen' },
+        image:    imageField('Imagen'),
         imageAlt: { type: 'text',     label: 'Texto alternativo (SEO)' },
         variant: {
           type: 'select', label: 'Posición de imagen',
@@ -598,7 +626,7 @@ export const builderConfig: Config<BuilderComponents> = {
           getItemSummary: (item) => item.name || 'Miembro',
           defaultItemProps: { photo: '', name: '', role: '', bio: '' },
           arrayFields: {
-            photo: { type: 'text',     label: 'URL de foto' },
+            photo: imageField('Foto'),
             name:  { type: 'text',     label: 'Nombre' },
             role:  { type: 'text',     label: 'Cargo' },
             bio:   { type: 'textarea', label: 'Bio corta' },
@@ -686,7 +714,7 @@ export const builderConfig: Config<BuilderComponents> = {
           getItemSummary: (item) => item.name || 'Logo',
           defaultItemProps: { logo: '', name: '', href: '' },
           arrayFields: {
-            logo: { type: 'text', label: 'URL del logo' },
+            logo: imageField('Logo'),
             name: { type: 'text', label: 'Nombre (alt)' },
             href: { type: 'text', label: 'Enlace (opcional)' },
           },

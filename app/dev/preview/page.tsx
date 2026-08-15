@@ -52,6 +52,39 @@ const data: Data = {
         ctaHref: '/reservar', ctaType: 'booking', background: 'primary',
       },
     },
+    // Foto de fondo con el texto encima. Los tres niveles de oscurecido están
+    // aquí para poder juzgar el contraste sobre una foto real, que es lo único
+    // que decide si esta variante se ve profesional o ilegible.
+    {
+      type: 'Hero',
+      props: {
+        id: 'hero-bg-suave',
+        title: 'Tu clínica, tu estilo',
+        subtitle: 'Oscurecido suave — comprobar que el titular se lee sobre las zonas claras de la foto.',
+        variant: 'image-background', image: photo, overlay: 'suave',
+        ctaText: 'Pedir cita', ctaHref: '/reservar', ctaType: 'booking', background: 'white',
+      },
+    },
+    {
+      type: 'Hero',
+      props: {
+        id: 'hero-bg-medio',
+        title: 'Tu clínica, tu estilo',
+        subtitle: 'Oscurecido medio — el valor por defecto, el que debería funcionar con casi cualquier foto.',
+        variant: 'image-background', image: photo, overlay: 'medio',
+        ctaText: 'Pedir cita', ctaHref: '/reservar', ctaType: 'booking', background: 'white',
+      },
+    },
+    {
+      type: 'Hero',
+      props: {
+        id: 'hero-bg-fuerte',
+        title: 'Tu clínica, tu estilo',
+        subtitle: 'Oscurecido fuerte — para fotos muy claras o con mucho detalle detrás del texto.',
+        variant: 'image-background', image: photo, overlay: 'fuerte',
+        ctaText: 'Pedir cita', ctaHref: '/reservar', ctaType: 'booking', background: 'white',
+      },
+    },
     // ── 3b ────────────────────────────────────────────────────────────────────
     {
       type: 'Services',

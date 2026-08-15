@@ -60,6 +60,9 @@ Nunca se importa desde un componente `'use client'`.
 | ✅ | **Cabeceras de seguridad.** No había ninguna. Destaca `frame-ancestors 'self'`: sin ella, el portal se enmarca en un iframe y se le roba un clic al dueño logueado sobre "Borrar página" — el `confirm()` no protege de eso. | `next.config.ts` |
 | ✅ | **Inyección en el JSON-LD.** `JSON.stringify` no escapa `<` ni `/`: un `</script>` en el nombre o la descripción del tenant cerraba la etiqueta y ejecutaba. | `lib/seo.ts` → `jsonLdScript` |
 | ✅ | **Fuerza bruta en los logins.** No había ningún freno en `/auth` ni en `/admin/login`. Backoff exponencial por cuenta y por IP. | `lib/auth-throttle.ts`, `lib/login-guard.ts`, `0008` |
+| ✅ | **MIME de las subidas verificado por magic bytes.** `file.type` lo declara el navegador: renombrar un `.html` a `.jpg` pasaba la validación entera. Ahora manda lo que el archivo ES — también para el `contentType` con el que se sirve y para la extensión. | `lib/builder/upload.ts` → `sniffImageMime` |
+| ✅ | **Hueco del matcher del proxy.** Lo excluido del matcher **no pasa por el proxy, así que su `x-tenant` no se borra**. Ahora solo se excluyen `_next/static` y `_next/image`, que nunca llegan a código de aplicación. | `proxy.ts`, `0011` |
+| ✅ | **`posts_public_read` retirada.** El blog va por service role; `anon` no necesitaba nada. Quita superficie y los grants por defecto que serían catastróficos sin RLS. | `0011` |
 | ✅ | **Segundo factor (TOTP) obligatorio en el admin.** Una credencial de admin abre el panel de la agencia y, vía `canAccessPortal`, el portal de **todos** los tenants. | `lib/mfa.ts`, `app/admin/mfa/` |
 
 ### Logins: qué se ha hecho y por qué así
@@ -121,6 +124,22 @@ La CSP completa —con `script-src`— va en `Content-Security-Policy-Report-Onl
 
 ---
 
+### Subidas: lo que manda son los bytes
+
+`file.type` lo pone el navegador. Renombrar un `.html` a `.jpg` y anunciarlo como `image/jpeg` no cuesta nada, y antes eso pasaba la validación completa. `sniffImageMime` mira la cabecera real (JPEG `FF D8 FF`, PNG `89 PNG…`, WEBP `RIFF…WEBP`) y **a partir de ahí se ignora lo que dijo el cliente**: el formato detectado se usa también para el `contentType` con el que se sirve y para la extensión, así que un desajuste no se cuela por ningún lado.
+
+En WEBP hay que comprobar los dos trozos: un WAV también empieza por `RIFF`.
+
+Es además donde la prohibición del SVG deja de depender del cliente — un SVG es XML y puede llevar `<script>`, y no tiene la cabecera de ninguno de los tres formatos.
+
+> **Queda fuera de nuestro control:** un archivo políglota (cabecera JPEG válida + carga útil detrás) se serviría como imagen desde el dominio de Supabase Storage, no desde el nuestro, así que no se ejecuta en nuestro origen. Si algún día las imágenes pasan a servirse desde el dominio del tenant, esto hay que revisarlo.
+
+### El matcher del proxy es parte de la frontera
+
+Lo que el matcher excluye **no pasa por el proxy**, y el proxy es quien borra el `x-tenant` que mande el cliente. Excluir por extensión (`.png`, `.svg`, …) parecía una optimización y era un agujero latente: el día que exista una ruta de servidor con esa forma (`opengraph-image`, un `route.ts` que devuelva un PNG), recibiría el header tal cual, y `x-tenant` es lo que decide de qué cliente son los datos.
+
+Ahora solo se excluyen `_next/static` y `_next/image`, que nunca llegan a código de aplicación. **Regla: si una ruta puede alcanzar código nuestro, pasa por el proxy.**
+
 ### Agente IA: la inyección de prompt no se filtra, se acota
 
 Detalle completo en `references/ai-agent.md` → *Seguridad del agente*. Lo esencial:
@@ -147,9 +166,6 @@ Por orden de riesgo.
 - [ ] **Revisar en el Dashboard los límites propios de Supabase Auth** (Authentication → Rate Limits). Nuestro throttle los complementa, no los sustituye: los suyos son por IP y actúan antes de llegar a nuestro código. Comprobar que no están más laxos de lo que creemos.
 
 - [ ] **El endpoint del chat aún no existe, y es el que necesita más freno.** Gasta dinero en cada llamada: un atacante no necesita robar nada, le basta con hacerte gastar. Al construirlo (Fase 6 Paso 2) lleva límite por tenant Y por IP, como el formulario de leads, además de los topes ya escritos en `lib/ai/guard.ts`.
-- [ ] **El MIME de las subidas lo declara el cliente.** `validateImageFile(file.type, ...)` valida lo que el navegador *dice* que es el archivo, no lo que es. Acotado por `allowed_mime_types` del bucket y por fijar `contentType` al subir, pero la comprobación real son los magic bytes.
-- [ ] **Huecos en el matcher del proxy.** Excluye `_next/*` y `*.png|svg|jpg|...`; en esas rutas **el `x-tenant` del cliente no se borra**. Hoy no es explotable (ninguna ruta de servidor con esas extensiones). Trampa latente: el día que exista `app/algo.png/route.ts`, el header pasa sin sanear.
-- [ ] **`posts_public_read` es innecesaria.** El blog renderiza por service role, así que `anon` no necesita leer `posts` directo. Anotado ya en `0006`. Least privilege: revocar.
 - [ ] **Sin log de auditoría.** No hay registro de quién cambió qué. Con un admin que entra en todos los tenants, no es opcional — es requisito de RGPD antes que técnico.
 - [ ] **`uuid` moderado vía Puck.** Arreglarlo exige bajar Puck a 0.13 (rotura). Solo afecta a `v3/v5/v6` con `buf`; Puck usa v4 para ids. Se acepta y se revisa cuando Puck actualice.
 

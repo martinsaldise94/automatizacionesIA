@@ -121,6 +121,24 @@ La CSP completa —con `script-src`— va en `Content-Security-Policy-Report-Onl
 
 ---
 
+### Agente IA: la inyección de prompt no se filtra, se acota
+
+Detalle completo en `references/ai-agent.md` → *Seguridad del agente*. Lo esencial:
+
+**No hay lista de frases prohibidas, y es deliberado.** Se esquiva parafraseando y da sensación de estar protegido. La defensa es que el agente **no pueda hacer nada peligroso aunque le convenzan**: una sola herramienta (`derivar_a_persona`), con presupuesto de 2 usos por conversación, y **ninguna herramienta de lectura** — no hay nada que sonsacarle sobre otros clientes porque no tiene por dónde consultarlo.
+
+> Si algún día se añade una herramienta de lectura (buscar en el blog, consultar disponibilidad), **hay que reevaluar el modelo de amenazas entero**: pasa a haber datos que una inyección puede intentar extraer.
+
+**El daño real de una inyección con éxito** no es que el agente diga una tontería: es que llame a la herramienta en bucle y llene el CRM de fichas falsas disparando un webhook por cada una. Por eso el límite que importa es el presupuesto de derivaciones, contado **contra la DB** y que ante un error de lectura asume el **tope, no cero**.
+
+**El historial nunca lo manda el cliente** — si no, cualquiera se inventa turnos de `assistant` y el agente los toma por suyos.
+
+**El widget renderiza texto, jamás HTML.** Esa es la barrera dura contra XSS; la regla del prompt ("no generes enlaces ni HTML") solo es apoyo. Un enlace de phishing servido desde el dominio del cliente es el peor resultado posible.
+
+**El transcript viaja a n8n y lo escribió un desconocido.** Las plantillas de n8n deben tratarlo como texto: si lo meten en un email HTML sin escapar, la inyección acaba en la bandeja del dueño del negocio.
+
+---
+
 ## Abierto
 
 Por orden de riesgo.
@@ -128,6 +146,7 @@ Por orden de riesgo.
 - [ ] **Pendiente de aplicar en Supabase:** la migración `0008_login_attempts.sql`. Hasta entonces el throttle no guarda nada, la consulta falla en silencio y **los logins no están frenados** (fail-open documentado arriba). Aplicarla es lo primero.
 - [ ] **Revisar en el Dashboard los límites propios de Supabase Auth** (Authentication → Rate Limits). Nuestro throttle los complementa, no los sustituye: los suyos son por IP y actúan antes de llegar a nuestro código. Comprobar que no están más laxos de lo que creemos.
 
+- [ ] **El endpoint del chat aún no existe, y es el que necesita más freno.** Gasta dinero en cada llamada: un atacante no necesita robar nada, le basta con hacerte gastar. Al construirlo (Fase 6 Paso 2) lleva límite por tenant Y por IP, como el formulario de leads, además de los topes ya escritos en `lib/ai/guard.ts`.
 - [ ] **El MIME de las subidas lo declara el cliente.** `validateImageFile(file.type, ...)` valida lo que el navegador *dice* que es el archivo, no lo que es. Acotado por `allowed_mime_types` del bucket y por fijar `contentType` al subir, pero la comprobación real son los magic bytes.
 - [ ] **Huecos en el matcher del proxy.** Excluye `_next/*` y `*.png|svg|jpg|...`; en esas rutas **el `x-tenant` del cliente no se borra**. Hoy no es explotable (ninguna ruta de servidor con esas extensiones). Trampa latente: el día que exista `app/algo.png/route.ts`, el header pasa sin sanear.
 - [ ] **`posts_public_read` es innecesaria.** El blog renderiza por service role, así que `anon` no necesita leer `posts` directo. Anotado ya en `0006`. Least privilege: revocar.

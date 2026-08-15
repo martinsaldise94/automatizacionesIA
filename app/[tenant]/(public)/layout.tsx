@@ -32,7 +32,7 @@ export default async function PublicLayout({
   const jsonLd = localBusinessJsonLd(tenant)
 
   return (
-    <div className="flex min-h-screen flex-col bg-white font-[var(--brand-font)]">
+    <div className="flex min-h-screen flex-col bg-white font-(--brand-font)">
       {jsonLd && (
         <script
           type="application/ld+json"

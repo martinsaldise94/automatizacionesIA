@@ -15,9 +15,17 @@ import { describe, expect, it } from 'vitest'
 
 const ADMIN_DIR = join(process.cwd(), 'app', 'admin')
 
-// Único archivo exento: el login es donde te conviertes en admin. Exigir
-// requireAdmin() ahí sería un bucle (nadie podría entrar nunca).
-const EXENTOS = new Set(['app/admin/login/actions.ts'])
+// Exentos, y solo por la misma razón: son los dos sitios donde te CONVIERTES en
+// admin con sesión completa. `requireAdmin()` exige aal2, así que llamarlo ahí
+// sería un bucle — nadie podría entrar ni dar de alta su autenticador nunca.
+//
+// La exención no es barra libre: el test de abajo comprueba que estos archivos
+// siguen validando sesión + rol admin por su cuenta.
+const EXENTOS = new Set(['app/admin/login/actions.ts', 'app/admin/mfa/actions.ts'])
+
+// Los exentos que aun así tienen que autenticar (el login no: ahí todavía no
+// hay sesión que comprobar).
+const EXENTOS_CON_GUARD_PROPIO = ['app/admin/mfa/actions.ts']
 
 function findActionFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -87,6 +95,19 @@ describe('server actions del panel de admin', () => {
       expect(source, `${rel} redefine requireAdmin en local`).not.toMatch(
         /(async\s+)?function\s+requireAdmin/,
       )
+    }
+  })
+
+  it('los archivos exentos de requireAdmin() siguen exigiendo sesión + rol admin', () => {
+    // El flujo de MFA no puede llamar a requireAdmin() (exige aal2, y venimos a
+    // conseguirlo), pero eso NO le exime de autenticar. Sin esto, la exención
+    // sería un agujero: sus actions se alcanzan por POST como cualquier otra.
+    for (const rel of EXENTOS_CON_GUARD_PROPIO) {
+      const source = stripComments(readFileSync(join(process.cwd(), rel), 'utf8'))
+
+      expect(source, `${rel} debe comprobar la sesión con getUser()`).toMatch(/getUser\s*\(\s*\)/)
+      expect(source, `${rel} debe comprobar el rol con isAdmin()`).toMatch(/isAdmin\s*\(/)
+      expect(source, `${rel} debe echar fuera al que no lo sea`).toContain("redirect('/admin/login')")
     }
   })
 })

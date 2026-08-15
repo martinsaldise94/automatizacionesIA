@@ -115,6 +115,17 @@ export type Post = {
   updated_at: string
 }
 
+// Intento de login FALLIDO. Alimenta el backoff de `lib/auth-throttle.ts`.
+// Sin `tenant_id` a propósito: los logins son transversales (el admin no
+// pertenece a ningún tenant). Ver el comentario de `0008_login_attempts.sql`.
+export type LoginAttempt = {
+  id: number
+  scope: 'admin' | 'portal' | 'mfa'
+  email: string
+  ip: string | null
+  created_at: string
+}
+
 // ─── Database type (usado por el cliente Supabase) ────────────────────────────
 //
 // Los Insert reflejan los DEFAULT y NULL del SQL: una columna con default o
@@ -144,6 +155,7 @@ export interface Database {
       messages: Table<Message, 'tenant_id' | 'role' | 'content'>
       pages:    Table<Page,    'tenant_id' | 'path' | 'title'>
       posts:    Table<Post,    'tenant_id' | 'slug' | 'title'>
+      login_attempts: Table<LoginAttempt, 'scope' | 'email'>
     }
     Views: Record<string, never>
     Functions: Record<string, never>

@@ -1,18 +1,30 @@
+import { ThrottleNotice } from '@/components/auth/ThrottleNotice'
 import { signIn } from './actions'
 
 interface Props {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; wait?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error } = await searchParams
+  const { error, wait } = await searchParams
+
+  // `wait` llega de la URL, así que es texto de fuera: se valida antes de
+  // usarlo. Un valor absurdo se ignora y cae al mensaje normal.
+  const waitMs = Number(wait)
+  const frenado = Number.isFinite(waitMs) && waitMs > 0 ? waitMs : null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg shadow p-8">
         <h1 className="text-xl font-semibold mb-6 text-gray-900">Admin — Agency Platform</h1>
 
-        {error && (
+        {frenado !== null && (
+          <div className="mb-4">
+            <ThrottleNotice waitMs={frenado} />
+          </div>
+        )}
+
+        {error && !frenado && (
           <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
             {error}
           </p>

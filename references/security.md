@@ -59,6 +59,50 @@ Nunca se importa desde un componente `'use client'`.
 | ✅ | **`createTenant` sin guard.** Cualquiera que alcanzara el endpoint creaba tenants, escribiendo con service role. Guard extraído a módulo compartido + test estructural. | `lib/admin-auth.ts`, `tests/adminGuards.test.ts` |
 | ✅ | **Cabeceras de seguridad.** No había ninguna. Destaca `frame-ancestors 'self'`: sin ella, el portal se enmarca en un iframe y se le roba un clic al dueño logueado sobre "Borrar página" — el `confirm()` no protege de eso. | `next.config.ts` |
 | ✅ | **Inyección en el JSON-LD.** `JSON.stringify` no escapa `<` ni `/`: un `</script>` en el nombre o la descripción del tenant cerraba la etiqueta y ejecutaba. | `lib/seo.ts` → `jsonLdScript` |
+| ✅ | **Fuerza bruta en los logins.** No había ningún freno en `/auth` ni en `/admin/login`. Backoff exponencial por cuenta y por IP. | `lib/auth-throttle.ts`, `lib/login-guard.ts`, `0008` |
+| ✅ | **Segundo factor (TOTP) obligatorio en el admin.** Una credencial de admin abre el panel de la agencia y, vía `canAccessPortal`, el portal de **todos** los tenants. | `lib/mfa.ts`, `app/admin/mfa/` |
+
+### Logins: qué se ha hecho y por qué así
+
+**Throttling, nunca bloqueo de cuenta.** Bloquear tras N fallos crea autoDoS: cualquiera que sepa tu email te deja fuera de tu propia plataforma, y no hay nadie que te desbloquee. El backoff es **lineal: 10s el primer frenazo, +10s por cada fallo más, tope 15min**. **Se cura solo** — ese tope es lo que lo hace throttling y no bloqueo.
+
+**Lineal y no exponencial**, revisado tras probarlo: la exponencial mordía brutal enseguida (al sexto fallo ya eran 5 minutos), y quien falla seis veces seguidas es casi siempre una persona real hecha un lío, no un diccionario. Lo lineal es amable con ella y sigue siendo caro para el atacante, porque **hay que pagar todos los escalones**: el coste acumulado crece al cuadrado y 50 intentos ya suman más de tres horas de espera. Hay un test que lo fija.
+
+**La pantalla muestra lo que QUEDA, con cuenta atrás en vivo** (`components/auth/ThrottleNotice.tsx`). Importa porque sin ella el número parecía aleatorio: el servidor devuelve el resto de la espera, así que tardar 8 segundos en teclear convertía un frenazo de 10 en un "espera 2". Era correcto e ilegible. Ahora baja sola y avisa cuando se puede reintentar.
+
+**Los tres ámbitos se cuentan por separado** (`login_attempts.scope`): `admin` y `portal` para la contraseña de cada login, `mfa` para el reto del segundo factor. Si compartieran contador, fallar el código TOTP frenaría el login por contraseña y al revés — son ataques distintos.
+
+**Por qué existe si Supabase Auth ya limita: sus límites son por IP.** Un credential stuffing repartido entre cientos de IPs contra **una** cuenta pasa por delante sin despeinarse. El contador por cuenta es complementario, no redundante. Los límites de Supabase siguen siendo la primera capa y no se tocan.
+
+**Márgenes distintos por clave, a propósito:** 2 fallos libres por cuenta, 10 por IP. Una oficina con NAT comparte IP y un compañero torpe no debe dejar fuera a los demás.
+
+**Cuenta como fallo también "credenciales buenas pero no autorizado".** Si solo contáramos las contraseñas erróneas, probar credenciales robadas contra el panel a ver cuál tiene rol admin saldría gratis.
+
+**El contador vive en la DB (`login_attempts`), no en memoria.** En serverless cada instancia tiene su memoria y muere entre despliegues: bastaría reintentar hasta caer en una fría.
+
+**Si esa tabla falla, se deja pasar — pero avisando.** Lo primero va contra el instinto y es deliberado: rechazar todos los logins ante una incidencia de Supabase convierte un problema de disponibilidad en una caída total del panel — autoDoS con más alcance que el ataque del que defiende. Debajo siguen los límites por IP de Supabase, la contraseña y el segundo factor.
+
+Lo segundo se añadió después de tropezar con ello: **fallar en silencio es correcto, fallar en secreto no.** Sin la migración aplicada el throttle no frenaba nada y desde fuera se veía exactamente igual que si funcionara. Ahora escribe `[throttle] … Los logins NO están frenados. ¿Falta aplicar 0008?` en consola. Si alguna vez dudas de si el freno está vivo, falla un login y mira ahí.
+
+**`ACCOUNT_FREE_ATTEMPTS` es literal:** con 2, el **tercer** intento ya espera. La comprobación corre antes de registrar el intento en curso, de ahí el `+1` en `backoffMs` — sin él salían tres gratis.
+
+**El contador por IP es de refuerzo.** `x-forwarded-for` lo sobrescribe el proxy en un despliegue serio (Vercel), pero en otros entornos el cliente puede falsearla. La barrera que no se esquiva cambiando de cabecera es la de cuenta.
+
+### MFA: alcance y el agujero que hay que conocer
+
+**En el admin sí, en los dueños no.** El admin es la llave maestra y es un operador único: escanear un QR una vez. A los dueños —muchos, no técnicos— exigirles TOTP para editar su web generaría más soporte que ataques evitados; ahí la defensa es el throttling.
+
+**Se comprueba en `requireAdmin()`, no solo al hacer login.** Una server action es alcanzable por POST directo: una sesión a medio elevar (contraseña sí, TOTP no) llegaría a ella sin pasar por la pantalla del código.
+
+**⚠️ Trust on first use.** Mientras el admin no haya dado de alta su autenticador, quien llegue primero con la contraseña **puede enrolar el suyo**. Es el mismo compromiso que hace cualquier sistema que impone MFA sobre cuentas ya existentes, y sigue siendo mejor que no tener MFA — pero significa que **el alta no se deja pendiente**: se hace en el primer login tras desplegar esto.
+
+**El alta del autenticador NO se genera en el render.** Se pidió una vez desde cliente (`EnrollTotp.tsx`) y se queda quieta. La primera versión creaba el QR dentro del Server Component y churneaba el secreto: cada render generaba uno nuevo y borraba el anterior, así que un refresco —o volver de un código mal tecleado— invalidaba el QR recién escaneado. El usuario acababa con varias entradas idénticas en su app y solo una válida, sin forma de distinguirlas. **Un código erróneo tampoco puede tirar el secreto**: `verifyEnrollment` devuelve resultado en vez de redirigir.
+
+**El reto del TOTP también está frenado** (ámbito `mfa`). Matemáticamente casi no hacía falta —un TOTP son 10⁶ combinaciones y rota cada 30s, y Supabase limita `verify` por su cuenta— pero se cerró igual por dos razones: es la **última barrera** (quien llega ahí ya tiene la contraseña, que es justo cuando toca ser estricto) y el límite de Supabase no lo hemos podido verificar, así que la última defensa no se apoya en una suposición. La clave es el email del usuario ya autenticado, no uno tecleado: aquí no hay nada que enumerar.
+
+**Coste asumido:** con el reto frenado, alguien que tenga tu contraseña puede quemar intentos aposta para hacerte esperar. Ya pasaba con el login y está acotado a 15 minutos.
+
+**Si se pierde el autenticador y no se guardó la clave, la única salida es el Dashboard de Supabase** (borrar el factor del usuario). No hay códigos de recuperación: añadirlos es otra cosa que guardar y proteger, y con un operador único el Dashboard ya es esa salida.
 
 ### Cabeceras: qué se aplica y qué no
 
@@ -81,13 +125,9 @@ La CSP completa —con `script-src`— va en `Content-Security-Policy-Report-Onl
 
 Por orden de riesgo.
 
-- [ ] **Sin protección de fuerza bruta en los logins.** Ni `/auth` ni `/admin/login` limitan intentos. El admin es el objetivo goloso: una credencial entra al panel de la agencia y, vía `canAccessPortal`, al portal de **todos** los tenants.
+- [ ] **Pendiente de aplicar en Supabase:** la migración `0008_login_attempts.sql`. Hasta entonces el throttle no guarda nada, la consulta falla en silencio y **los logins no están frenados** (fail-open documentado arriba). Aplicarla es lo primero.
+- [ ] **Revisar en el Dashboard los límites propios de Supabase Auth** (Authentication → Rate Limits). Nuestro throttle los complementa, no los sustituye: los suyos son por IP y actúan antes de llegar a nuestro código. Comprobar que no están más laxos de lo que creemos.
 
-  **Decisión tomada (agosto 2026):** *throttling*, **nunca bloqueo de cuenta**. El bloqueo crea autoDoS —te quedas fuera de tu propia plataforma sin nadie que te desbloquee—; el throttling exponencial por IP+cuenta te cuesta segundos y al atacante le tumba el diccionario. Salida fuera de banda si algo va mal: el Dashboard de Supabase.
-
-  **Prioridad: MFA (TOTP) en el admin antes que su throttling.** Con segundo factor, el credential stuffing deja de importar aunque se filtre la contraseña; Supabase Auth lo soporta y el coste para un operador único es escanear un QR una vez. En los dueños es al revés: el throttling es la defensa principal (muchas cuentas, gente no técnica, contraseñas reutilizadas, sin MFA).
-
-  **Comprobar primero:** Supabase Auth ya aplica límites propios en sus endpoints. Antes de escribir throttling a mano, mirar en el Dashboard qué hay y si basta con ajustarlo.
 - [ ] **El MIME de las subidas lo declara el cliente.** `validateImageFile(file.type, ...)` valida lo que el navegador *dice* que es el archivo, no lo que es. Acotado por `allowed_mime_types` del bucket y por fijar `contentType` al subir, pero la comprobación real son los magic bytes.
 - [ ] **Huecos en el matcher del proxy.** Excluye `_next/*` y `*.png|svg|jpg|...`; en esas rutas **el `x-tenant` del cliente no se borra**. Hoy no es explotable (ninguna ruta de servidor con esas extensiones). Trampa latente: el día que exista `app/algo.png/route.ts`, el header pasa sin sanear.
 - [ ] **`posts_public_read` es innecesaria.** El blog renderiza por service role, así que `anon` no necesita leer `posts` directo. Anotado ya en `0006`. Least privilege: revocar.
